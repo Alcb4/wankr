@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback } from 'react'
 import { apiService } from '../services/apiService'
 import type { LeaderboardData, LeaderboardEntry } from '../config/types'

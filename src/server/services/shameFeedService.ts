@@ -491,10 +491,32 @@ export class ShameFeedService extends EventEmitter {
       totalShameDelivered: Math.floor(totalAmount), // Changed to whole integer
       uniqueShamers,
       uniqueShamed,
+      lastUpdate: new Date().toISOString(),
       averageJudgment: this.shameHistory
         .filter(tx => tx.judgment)
         .reduce((sum, tx) => sum + (tx.judgment || 0), 0) / 
         this.shameHistory.filter(tx => tx.judgment).length || 0
+    };
+  }
+
+  /**
+   * Get shame feed data (history + stats)
+   */
+  async getShameFeed() {
+    // Start monitoring if not already started
+    if (!this.isMonitoring) {
+      await this.startMonitoring();
+    }
+
+    // Get current shame history with resolved handles
+    const shameHistory = await this.refreshShameHistoryWithHandles();
+    
+    // Get stats
+    const stats = this.getShameStats();
+
+    return {
+      shameHistory,
+      stats
     };
   }
 

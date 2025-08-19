@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from 'react'
 import { walletService } from '../services/walletService'
 import type { WalletState } from '../config/types'

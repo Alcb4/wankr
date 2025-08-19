@@ -1,3 +1,4 @@
+"use client"
 
 import { useWallet } from '../../hooks/useWallet'
 
@@ -69,13 +70,13 @@ export function WalletConnect() {
         background: 'linear-gradient(45deg, #ff6b6b, #ff8e53)',
         border: 'none',
         color: 'white',
-        padding: '0.4rem 0.8rem', // Reduced from 1rem 2rem
-        borderRadius: '8px', // Reduced from 12px
+        padding: '0.4rem 0.8rem', // Back to original
+        borderRadius: '8px',
         cursor: isConnecting ? 'not-allowed' : 'pointer',
-        fontSize: '1rem', // Reduced from 1.1rem
+        fontSize: '0.7rem', // Back to original
         fontWeight: '600',
         transition: 'all 0.3s ease',
-        width: '100%',
+        width: '100%', // Back to original
         opacity: isConnecting ? 0.6 : 1
       }}
     >

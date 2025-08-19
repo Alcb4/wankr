@@ -1,3 +1,4 @@
+"use client"
 
 import { useShameFeed } from '../../hooks/useShameFeed'
 import { ShameItem } from './ShameItem'

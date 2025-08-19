@@ -137,7 +137,10 @@ export class HandleResolutionFID extends EventEmitter {
             }
           }
           
-          console.log(`✅ Found Farcaster user: ${user.username} for ${address}`);
+          // Only log successful resolutions occasionally to reduce noise
+          if (Math.random() < 0.1) { // 10% chance to log
+            console.log(`✅ Found Farcaster user: ${user.username} for ${address}`);
+          }
           
           // Emit event for external handling (cache/register updates)
           this.emit('resolution', {
@@ -153,11 +156,28 @@ export class HandleResolutionFID extends EventEmitter {
             priority: 2 // Farcaster priority
           });
         } else {
-          console.log(`❌ No Farcaster user found for ${address}`);
+          // Don't log every individual "not found" - too noisy
+          // console.log(`❌ No Farcaster user found for ${address}`);
         }
       });
     } catch (error) {
-      console.error('Farcaster batch resolution error:', error);
+      // Handle different types of errors gracefully
+      if (error && typeof error === 'object' && 'response' in error) {
+        const status = (error as any).response?.status;
+        if (status === 404) {
+          // 404 is expected when addresses don't have Farcaster handles
+          console.log(`ℹ️  No Farcaster handles found for ${addresses.length} addresses (404)`);
+        } else if (status === 429) {
+          // Rate limiting - expected and handled by delays
+          console.log(`⏳ Farcaster API rate limited, will retry later (429)`);
+        } else {
+          // Other HTTP errors
+          console.log(`⚠️  Farcaster API error (${status}): ${addresses.length} addresses`);
+        }
+      } else {
+        // Non-HTTP errors
+        console.log(`⚠️  Farcaster resolution error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 
@@ -242,7 +262,24 @@ export class HandleResolutionFID extends EventEmitter {
       });
 
     } catch (error) {
-      console.error('Farcaster resolution error:', error);
+      // Handle different types of errors gracefully
+      if (error && typeof error === 'object' && 'response' in error) {
+        const status = (error as any).response?.status;
+        if (status === 404) {
+          // 404 is expected when addresses don't have Farcaster handles
+          console.log(`ℹ️  No Farcaster handles found for ${addresses.length} addresses (404)`);
+        } else if (status === 429) {
+          // Rate limiting - expected and handled by delays
+          console.log(`⏳ Farcaster API rate limited, will retry later (429)`);
+        } else {
+          // Other HTTP errors
+          console.log(`⚠️  Farcaster API error (${status}): ${addresses.length} addresses`);
+        }
+      } else {
+        // Non-HTTP errors
+        console.log(`⚠️  Farcaster resolution error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      
       // Return null for all addresses on error
       addresses.forEach(addr => {
         results[addr.toLowerCase()] = null;

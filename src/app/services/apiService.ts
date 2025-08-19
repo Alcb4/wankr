@@ -1,7 +1,7 @@
 import type { ShameTransaction, ShameFeedStats, LeaderboardData } from '../config/types'
 
-// Use environment variable for API URL, fallback to localhost for development
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api'
+// Use environment variable for API URL, fallback to same port as Next.js server
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api'
 
 class ApiService {
   // Get shame feed data

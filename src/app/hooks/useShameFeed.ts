@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { apiService } from '../services/apiService'
 import type { ShameTransaction, ShameFeedStats } from '../config/types'
