@@ -52,7 +52,7 @@ export function Leaderboard() {
               fontWeight: '500'
             }}
           >
-            Top $WANKR's
+            Top $WANKR&apos;s
           </button>
           <button
             onClick={() => setActiveTab('sent')}

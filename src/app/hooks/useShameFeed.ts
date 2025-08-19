@@ -9,11 +9,14 @@ interface TransactionWithNewFlag extends ShameTransaction {
 }
 
 export function useShameFeed() {
-  const [transactions, setTransactions] = useState<TransactionWithNewFlag[]>([])
-  const [stats, setStats] = useState<ShameFeedStats>({ totalTransactions: 0, totalShameDelivered: 0, lastUpdate: '' })
+  const [transactions, setTransactions] = useState<ShameTransaction[]>([])
+  const [stats, setStats] = useState<ShameFeedStats>({
+    totalTransactions: 0,
+    totalShameDelivered: 0,
+    lastUpdate: ''
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const previousTransactionHashes = useRef<Set<string>>(new Set())
 
   // Load shame data
@@ -60,23 +63,10 @@ export function useShameFeed() {
   }, [])
 
   useEffect(() => {
-    // Load initial data
     loadData()
-    
-    // Start refresh interval (every 10 seconds for more responsive handle updates)
-    intervalRef.current = setInterval(() => {
-      
-      loadData()
-    }, 10000)
-
-    // Cleanup on unmount
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
-    }
-  }, []) // Empty dependency array - only run once
+    const interval = setInterval(loadData, 10000) // Refresh every 10 seconds
+    return () => clearInterval(interval)
+  }, [loadData])
 
   return {
     transactions,

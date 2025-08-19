@@ -3,12 +3,12 @@ import { LeaderboardService } from '../../../../server/services/leaderboardServi
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { period: string } }
+  { params }: { params: Promise<{ period: string }> }
 ) {
   try {
-    const period = params.period || 'all'
+    const { period } = await params
     const leaderboardService = new LeaderboardService()
-    const result = await leaderboardService.getLeaderboards(period)
+    const result = await leaderboardService.getLeaderboards(period as 'all' | 'week' | 'day')
     
     return NextResponse.json(result)
   } catch (error) {

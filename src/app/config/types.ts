@@ -1,3 +1,5 @@
+import { ethers } from 'ethers'
+
 // Wallet and Contract Types
 export interface WalletState {
   address: string | null
@@ -7,9 +9,9 @@ export interface WalletState {
 }
 
 export interface ContractState {
-  contract: any | null
-  provider: any | null
-  signer: any | null
+  contract: ethers.Contract | null
+  provider: ethers.BrowserProvider | null
+  signer: ethers.JsonRpcSigner | null
 }
 
 // Shame Feed Types
@@ -26,6 +28,7 @@ export interface ShameTransaction {
   toDisplayName?: string
   fromSource?: 'farcaster' | 'basenames' | 'shortened'
   toSource?: 'farcaster' | 'basenames' | 'shortened'
+  isNew?: boolean
 }
 
 export interface ShameFeedStats {

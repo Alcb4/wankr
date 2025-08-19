@@ -37,7 +37,7 @@ export class HandleResolutionService {
     this.basenamesResolver = new HandleResolutionBasenames();
     
     // Listen to FID resolution events
-    this.fidResolver.on('resolution', (resolution: any) => {
+    this.fidResolver.on('resolution', (resolution: HandleResolution) => {
       this.updateCacheAndRegisterIfBetter(resolution.address, resolution);
     });
   }

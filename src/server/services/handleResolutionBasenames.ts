@@ -18,7 +18,7 @@ export class HandleResolutionBasenames {
   /**
    * Resolve Basename for an address
    */
-  async resolveBasename(address: string): Promise<BasenamesHandleResolution | null> {
+  async resolveBasename(_address: string): Promise<BasenamesHandleResolution | null> {
     // TEMPORARILY DISABLED - onchainkit requires specific setup
 
     return null;

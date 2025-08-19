@@ -33,7 +33,7 @@ class ApiService {
   }
 
   // Resolve handles in bulk
-  async resolveHandlesBulk(addresses: string[]): Promise<{ [address: string]: any }> {
+  async resolveHandlesBulk(addresses: string[]): Promise<{ [address: string]: { displayName: string; source: string } }> {
     try {
       const response = await fetch(`${API_BASE_URL}/resolve-handles-bulk`, {
         method: 'POST',
@@ -53,7 +53,7 @@ class ApiService {
   }
 
   // Test Dune API
-  async testDune(): Promise<any> {
+  async testDune(): Promise<{ success: boolean; data?: unknown; error?: string }> {
     try {
       const response = await fetch(`${API_BASE_URL}/test-dune`)
       if (!response.ok) {

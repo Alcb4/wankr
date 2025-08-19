@@ -54,9 +54,9 @@ class WalletService {
       }
 
       // Request account access
-      const accounts = await window.ethereum.request({ 
-        method: 'eth_requestAccounts' 
-      })
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts'
+      }) as string[]
 
       if (accounts.length === 0) {
         throw new Error('No accounts found')
@@ -121,34 +121,23 @@ class WalletService {
   private setupEventListeners(): void {
     if (typeof window.ethereum === 'undefined') return
 
-    window.ethereum.on('accountsChanged', async (accounts: string[]) => {
-      if (accounts.length === 0) {
-        // User disconnected wallet
-        this.walletState = {
-          address: null,
-          balance: null,
-          isConnected: false,
-          isConnecting: false
-        }
-        this.contractState = {
-          contract: null,
-          provider: null,
-          signer: null
-        }
-        showError('Wallet disconnected')
-      } else {
-        // User switched accounts
-        this.walletState.address = accounts[0]
-        await this.updateBalance()
-        showSuccess('Account switched')
+    window.ethereum.on('accountsChanged', (accounts: unknown) => {
+      if (Array.isArray(accounts) && accounts.length === 0) {
+        // Disconnect if no accounts
+        this.disconnectWallet()
+      } else if (Array.isArray(accounts) && accounts.length > 0) {
+        // Update address if accounts changed
+        this.walletState.address = accounts[0] as string
+        this.updateBalance()
       }
-      this.notifyListeners()
     })
 
-    window.ethereum.on('chainChanged', (_chainId: string) => {
-      // Reload page when chain changes
-      window.location.reload()
-    })
+    window.ethereum.on('chainChanged', this.handleChainChange)
+  }
+
+  private handleChainChange = () => {
+    // Reload the page when chain changes
+    window.location.reload()
   }
 
   // Disconnect wallet

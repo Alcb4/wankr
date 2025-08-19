@@ -72,7 +72,7 @@ export function ShameItem({ shame, isNew = false }: ShameItemProps) {
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
               }}>
-                "{shame.reason}"
+                {`"${shame.reason}"`}
               </div>
             )}
           </div>

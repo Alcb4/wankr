@@ -163,7 +163,7 @@ export class HandleResolutionFID extends EventEmitter {
     } catch (error) {
       // Handle different types of errors gracefully
       if (error && typeof error === 'object' && 'response' in error) {
-        const status = (error as any).response?.status;
+        const status = (error as { response?: { status?: number } }).response?.status;
         if (status === 404) {
           // 404 is expected when addresses don't have Farcaster handles
           console.log(`ℹ️  No Farcaster handles found for ${addresses.length} addresses (404)`);
@@ -264,7 +264,7 @@ export class HandleResolutionFID extends EventEmitter {
     } catch (error) {
       // Handle different types of errors gracefully
       if (error && typeof error === 'object' && 'response' in error) {
-        const status = (error as any).response?.status;
+        const status = (error as { response?: { status?: number } }).response?.status;
         if (status === 404) {
           // 404 is expected when addresses don't have Farcaster handles
           console.log(`ℹ️  No Farcaster handles found for ${addresses.length} addresses (404)`);

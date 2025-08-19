@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import { EventEmitter } from 'events';
-import { HandleResolutionService, HandleResolution } from './handleResolutionService';
+import { HandleResolutionService } from './handleResolutionService';
 
 // WANKR Contract Configuration
 const WANKR_CONTRACT_ADDRESS = '0xa207c6e67cea08641503947ac05c65748bb9bb07';
@@ -94,7 +94,7 @@ export class ShameFeedService extends EventEmitter {
       if (hasCustomFunctions) {
         // Load recent shame history
         const history = await this.contract.getShameHistory();
-        this.shameHistory = history.map((tx: any) => ({
+        this.shameHistory = history.map((tx: { from: string; to: string; amount: bigint; timestamp: bigint; reason: string }) => ({
           from: tx.from,
           to: tx.to,
           amount: ethers.formatUnits(tx.amount, 18),
@@ -104,7 +104,7 @@ export class ShameFeedService extends EventEmitter {
 
         // Load top shame soldiers
         const soldiers = await this.contract.getTopShameSoldiers();
-        this.topSoldiers = soldiers.map((soldier: any) => ({
+        this.topSoldiers = soldiers.map((soldier: { soldier: string; totalShameDelivered: bigint; lastShameTime: bigint; rank: bigint }) => ({
           soldier: soldier.soldier,
           totalShameDelivered: ethers.formatUnits(soldier.totalShameDelivered, 18),
           lastShameTime: Number(soldier.lastShameTime),
@@ -136,7 +136,7 @@ export class ShameFeedService extends EventEmitter {
       // Try to call a custom function to see if it exists
       await this.contract.getShameHistory();
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }
@@ -165,7 +165,7 @@ export class ShameFeedService extends EventEmitter {
 
       
       // Filter and limit to last 20 transactions
-      const filteredLogs = logs.slice(-20).filter((log: any) => {
+      const filteredLogs = logs.slice(-20).filter((log: ethers.Log) => {
         const iface = new ethers.Interface([
           'event Transfer(address indexed from, address indexed to, uint256 value)'
         ]);
@@ -176,7 +176,7 @@ export class ShameFeedService extends EventEmitter {
       });
 
       // Load transactions without handle resolution initially (for performance)
-      this.shameHistory = filteredLogs.map((log: any) => {
+      this.shameHistory = filteredLogs.map((log: ethers.Log) => {
         const iface = new ethers.Interface([
           'event Transfer(address indexed from, address indexed to, uint256 value)'
         ]);
@@ -322,7 +322,7 @@ export class ShameFeedService extends EventEmitter {
   private async checkCustomTransactions() {
     try {
       const history = await this.contract.getShameHistory();
-      const newTransactions = history.filter((tx: any) => 
+      const newTransactions = history.filter((tx: { timestamp: bigint }) => 
         Number(tx.timestamp) > Math.floor(Date.now() / 1000) - 60 // Last minute
       );
 
@@ -411,7 +411,7 @@ export class ShameFeedService extends EventEmitter {
   private async updateLeaderboard() {
     try {
       const soldiers = await this.contract.getTopShameSoldiers();
-      this.topSoldiers = soldiers.map((soldier: any) => ({
+      this.topSoldiers = soldiers.map((soldier: { soldier: string; totalShameDelivered: bigint; lastShameTime: bigint; rank: bigint }) => ({
         soldier: soldier.soldier,
         totalShameDelivered: ethers.formatUnits(soldier.totalShameDelivered, 18),
         lastShameTime: Number(soldier.lastShameTime),

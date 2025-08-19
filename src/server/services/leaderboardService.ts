@@ -1,4 +1,4 @@
-import { DuneService, DuneLeaderboardEntry, DuneLeaderboardData } from './duneService';
+import { DuneService } from './duneService';
 import { HandleResolutionService, HandleResolution } from './handleResolutionService';
 
 export interface LeaderboardEntry {
@@ -26,7 +26,7 @@ export class LeaderboardService {
   /**
    * Get shame received leaderboard
    */
-  async getShameReceivedLeaderboard(period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardEntry[]> {
+  async getShameReceivedLeaderboard(_period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardEntry[]> {
     try {
       // Use Dune service instead of blockchain polling
       const duneData = await this.duneService.getShameReceivedLeaderboard();
@@ -44,7 +44,7 @@ export class LeaderboardService {
   /**
    * Get shame soldiers leaderboard (senders)
    */
-  async getShameSoldiersLeaderboard(period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardEntry[]> {
+  async getShameSoldiersLeaderboard(_period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardEntry[]> {
     try {
       // Use Dune service instead of blockchain polling
       const duneData = await this.duneService.getShameSoldiersLeaderboard();
@@ -62,7 +62,7 @@ export class LeaderboardService {
   /**
    * Get both leaderboards at once
    */
-  async getLeaderboards(period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardData> {
+  async getLeaderboards(_period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardData> {
     try {
       // Use Dune service instead of blockchain polling
       const duneData = await this.duneService.getLeaderboards();

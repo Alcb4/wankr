@@ -63,7 +63,7 @@ export class DuneService {
 
       // Extract all addresses first
       const addresses = result.result.rows
-        .map((row: any) => (row.sender as string)?.toLowerCase())
+        .map((row: { sender?: string }) => (row.sender as string)?.toLowerCase())
         .filter((address: string) => address);
       
       // Bulk resolve all addresses at once
@@ -72,7 +72,7 @@ export class DuneService {
       // Build entries using resolved data
       const entries: DuneLeaderboardEntry[] = [];
       for (let i = 0; i < result.result.rows.length; i++) {
-        const row = result.result.rows[i] as any;
+        const row = result.result.rows[i] as { sender?: string; times_received?: string; total_wankr_received?: string };
         const address = (row.sender as string)?.toLowerCase();
         if (!address) continue;
 
@@ -119,7 +119,7 @@ export class DuneService {
 
       // Extract all addresses first
       const addresses = result.result.rows
-        .map((row: any) => (row.recipient as string)?.toLowerCase())
+        .map((row: { recipient?: string }) => (row.recipient as string)?.toLowerCase())
         .filter((address: string) => address);
       
       // Bulk resolve all addresses at once
@@ -128,7 +128,7 @@ export class DuneService {
       // Build entries using resolved data
       const entries: DuneLeaderboardEntry[] = [];
       for (let i = 0; i < result.result.rows.length; i++) {
-        const row = result.result.rows[i] as any;
+        const row = result.result.rows[i] as { recipient?: string; times_received?: string; total_wankr_received?: string };
         const address = (row.recipient as string)?.toLowerCase();
         if (!address) continue;
 
@@ -184,11 +184,10 @@ export class DuneService {
    */
   async testConnection(): Promise<boolean> {
     try {
-      const result = await this.duneClient.getLatestResult({
+      await this.duneClient.getLatestResult({
         queryId: this.SHAME_SOLDIERS_QUERY_ID
       });
       
-
       return true;
     } catch (error) {
       console.error('Dune API connection failed:', error);

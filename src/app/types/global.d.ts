@@ -1,6 +1,13 @@
-/// <reference types="react" />
 /// <reference types="react-dom" />
 
-interface Window {
-  ethereum?: any
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: unknown[] }) => Promise<unknown>
+      on: (event: string, callback: (...args: unknown[]) => void) => void
+      removeListener: (event: string, callback: (...args: unknown[]) => void) => void
+    }
+  }
 }
+
+export {}
