@@ -1,38 +1,50 @@
 export const colors = {
-  // Primary colors
-  primary: '#ff6b6b',
-  primaryGradient: 'linear-gradient(45deg, #ff6b6b, #ff8e53, #ff6b6b)',
-  secondary: '#ff8e53',
+  // Core Brand Colors (Official WANKR Palette)
+  primary: '#7630D9', // Wankr-Gyatt-3 - buttons, links, key accents
+  secondary: '#79F2E6', // Neon accent for highlights
+  accent: '#F06BF2', // Pink accent for gradients
+  cyber: '#04588C', // Borders, underlines, subtle dividers
   
-  // Background colors
-  background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
-  cardBackground: 'rgba(255, 255, 255, 0.05)',
-  cardBorder: 'rgba(255, 255, 255, 0.1)',
+  // Text Colors
+  textPrimary: '#532473', // Main text on light backgrounds
+  textSecondary: '#7A5A8A', // Secondary text on light backgrounds
+  textDark: '#FFFFFF', // Main text on dark backgrounds
+  textDarkSecondary: '#79F2E6', // Secondary text on dark backgrounds
   
-  // Text colors
-  textPrimary: '#ffffff',
-  textSecondary: '#a0a0a0',
-  textMuted: '#888',
+  // Background Colors
+  backgroundLight: '#FAFAFF', // Light mode background
+  backgroundDark: '#0C0A12', // Dark mode background
+  cardLight: '#FFFFFF', // Light mode card background
+  cardDark: '#1A1620', // Dark mode card background
   
-  // Status colors
+  // Gradients (Official WANKR Gradients)
+  gradientHero: 'linear-gradient(90deg, #F06BF2 0%, #7630D9 50%, #79F2E6 100%)',
+  gradientCTA: 'linear-gradient(135deg, #7630D9 0%, #04588C 100%)',
+  gradientSection: 'radial-gradient(circle at 20% 10%, #F06BF2 0%, transparent 40%), radial-gradient(circle at 80% 80%, #04588C 0%, transparent 45%)',
+  
+  // Button Colors
+  buttonPrimary: 'linear-gradient(135deg, #7630D9 0%, #04588C 100%)',
+  buttonSecondary: 'rgba(255, 255, 255, 0.05)',
+  buttonOutline: '#04588C',
+  
+  // Status Colors
   success: '#2ed573',
   error: '#ff4757',
   warning: '#ffc107',
   
-  // Button colors
-  buttonPrimary: 'linear-gradient(45deg, #ff6b6b, #ff8e53)',
-  buttonDanger: 'linear-gradient(45deg, #ff4757, #ff3742)',
-  buttonSecondary: 'rgba(255, 255, 255, 0.05)',
-  
-  // Input colors
+  // Input Colors
   inputBackground: 'rgba(255, 255, 255, 0.05)',
   inputBorder: 'rgba(255, 255, 255, 0.1)',
   
-  // Overlay colors
+  // Overlay Colors
   overlay: 'rgba(255, 255, 255, 0.02)',
   overlayHover: 'rgba(255, 255, 255, 0.04)',
   
   // Live status
   liveStatus: '#2ed573',
-  liveStatusBg: 'rgba(46, 213, 115, 0.1)'
+  liveStatusBg: 'rgba(46, 213, 115, 0.1)',
+  
+  // Hover Effects
+  hoverCyber: 'linear-gradient(135deg, #7630D9 0%, #04588C 100%)',
+  hoverGlow: '0 0 20px rgba(118, 48, 217, 0.3)',
 } as const

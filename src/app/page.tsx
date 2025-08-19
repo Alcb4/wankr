@@ -15,41 +15,38 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 
 export default function Home() {
   return (
-    <PageContainer>
-      <Header />
-      <WalletSection>
-        <WalletConnect />
-      </WalletSection>
-      <MainContent>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '1.5rem',
-          marginBottom: '1.5rem'
-        }}>
-          <BoxContainer minHeight="350px" padding="1.75rem">
-            <SectionTitle>🎭 Live Shame Feed</SectionTitle>
-            <ErrorBoundary>
-              <ShameFeed />
-            </ErrorBoundary>
-          </BoxContainer>
+    <div className="min-h-screen bg-gradient-section">
+      <PageContainer>
+        <Header />
+        <WalletSection>
+          <WalletConnect />
+        </WalletSection>
+        <MainContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <BoxContainer minHeight="350px" padding="1.75rem">
+              <SectionTitle>🎭 Live Shame Feed</SectionTitle>
+              <ErrorBoundary>
+                <ShameFeed />
+              </ErrorBoundary>
+            </BoxContainer>
+            
+            <BoxContainer minHeight="350px" padding="1.75rem">
+              <SectionTitle>🎭 Deliver Shame</SectionTitle>
+              <ErrorBoundary>
+                <SendWankr />
+              </ErrorBoundary>
+            </BoxContainer>
+          </div>
           
-          <BoxContainer minHeight="350px" padding="1.75rem">
-            <SectionTitle>🎭 Deliver Shame</SectionTitle>
+          <BoxContainer padding="1.75rem" style={{ width: '100%' }}>
+            <SectionTitle textAlign="center">🏆 Leaderboards</SectionTitle>
             <ErrorBoundary>
-              <SendWankr />
+              <Leaderboard />
             </ErrorBoundary>
           </BoxContainer>
-        </div>
-        
-        <BoxContainer padding="1.75rem" style={{ width: '100%' }}>
-          <SectionTitle textAlign="center">🏆 Leaderboards</SectionTitle>
-          <ErrorBoundary>
-            <Leaderboard />
-          </ErrorBoundary>
-        </BoxContainer>
-      </MainContent>
-      <Footer />
-    </PageContainer>
+        </MainContent>
+        <Footer />
+      </PageContainer>
+    </div>
   )
 }

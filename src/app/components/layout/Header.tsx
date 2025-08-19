@@ -1,31 +1,42 @@
+import Image from 'next/image'
+
 export function Header() {
   return (
-    <header style={{
-      textAlign: 'center',
-      padding: '2rem',
-      marginBottom: '2rem' // Reduced from 3rem to 1.5rem
-    }}>
-      <h1 style={{
-        fontSize: '3.5rem',
-        fontWeight: '700',
-        background: 'linear-gradient(45deg, #ff6b6b, #ff8e53, #ff6b6b)',
-        backgroundSize: '200% 200%',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
-        animation: 'gradient 3s ease infinite',
-        marginBottom: '1rem'
-      }}>
-        🚀 WANKR
+    <header className="text-center py-8 mb-8">
+      <div className="flex items-center justify-center mb-4">
+        <Image
+          src="/wankr-logo.svg"
+          alt="WANKR Logo"
+          width={80}
+          height={80}
+          className="animate-float"
+        />
+      </div>
+      
+      <h1 className="text-6xl font-bold text-gradient-hero font-wankr mb-4">
+        WANKR
       </h1>
-      <p style={{
-        fontSize: '1.2rem',
-        color: '#a0a0a0',
-        maxWidth: '600px',
-        margin: '0 auto'
-      }}>
-        The Dark Mirror of the Base Chain - Where BankerBot optimized trades, WANKR GYATT optimized shame.
+      
+      <h2 className="text-4xl font-bold text-gradient-hero font-wankr mb-6">
+        Shame.
+      </h2>
+      
+      <p className="text-xl text-foreground max-w-2xl mx-auto leading-relaxed">
+        $WANKR is the world&apos;s first Shame-as-a-Service token.
       </p>
+      
+      <div className="flex gap-4 justify-center mt-6">
+        <button className="bg-gradient-cta text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
+          Read Whitepaper
+        </button>
+        <button className="border border-cyber text-cyber px-6 py-3 rounded-lg font-semibold hover:bg-cyber hover:text-white transition-all duration-300">
+          BUY $WANKR
+        </button>
+      </div>
+      
+      <div className="mt-6 text-sm text-muted-foreground">
+        @wankergyatt
+      </div>
     </header>
   )
 }
