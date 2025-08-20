@@ -1,41 +1,71 @@
 import Image from 'next/image'
+import { components } from '../../theme'
 
 export function Header() {
   return (
-    <header className="text-center py-8 mb-8">
-      <div className="flex items-center justify-center mb-4">
+    <header className="text-center py-6 px-4">
+      {/* Logo and Title on same line */}
+      <div className="flex items-center justify-center gap-4 mb-4">
         <Image
           src="/wankr-logo.svg"
           alt="WANKR Logo"
-          width={80}
-          height={80}
+          width={60}
+          height={60}
           className="animate-float"
         />
+        <h1 className="text-6xl md:text-7xl lg:text-8xl font-wankr text-gradient-hero font-extrabold tracking-tight">
+          WANKR
+        </h1>
       </div>
       
-      <h1 className="text-6xl font-bold text-gradient-hero font-wankr mb-4">
-        WANKR
-      </h1>
-      
-      <h2 className="text-4xl font-bold text-gradient-hero font-wankr mb-6">
-        Shame.
+      {/* Subtitle */}
+      <h2 className="text-xl md:text-2xl font-wankr text-gradient-hero mb-3">
+        The Shame Economy
       </h2>
       
-      <p className="text-xl text-foreground max-w-2xl mx-auto leading-relaxed">
-        $WANKR is the world&apos;s first Shame-as-a-Service token.
-      </p>
-      
-      <div className="flex gap-4 justify-center mt-6">
-        <button className="bg-gradient-cta text-white px-6 py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105">
+      {/* Action buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
+        <a 
+          href="https://github.com/mrpapawheelie/wankr/blob/main/assets/WANKR_Whitepaper.pdf"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`
+            ${components.button.primary}
+            hover:scale-105 transition-transform duration-200
+          `}
+        >
           Read Whitepaper
-        </button>
-        <button className="border border-cyber text-cyber px-6 py-3 rounded-lg font-semibold hover:bg-cyber hover:text-white transition-all duration-300">
+        </a>
+        <a 
+          href="https://swap.cow.fi/#/8453/swap/ETH/Wankr"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`
+            ${components.button.secondary}
+            hover:scale-105 transition-transform duration-200
+          `}
+        >
           BUY $WANKR
-        </button>
+        </a>
       </div>
       
-      <div className="mt-6 text-sm text-muted-foreground">
-        @wankergyatt
+      {/* Twitter handle with X logo - reduced margin */}
+      <div className="text-sm text-muted-foreground font-medium mb-2">
+        <a 
+          href="https://x.com/wankergyatt"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 hover:text-foreground transition-colors duration-200"
+        >
+          <svg 
+            className="w-4 h-4 fill-current" 
+            viewBox="0 0 24 24" 
+            aria-hidden="true"
+          >
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          <span>@wankergyatt</span>
+        </a>
       </div>
     </header>
   )

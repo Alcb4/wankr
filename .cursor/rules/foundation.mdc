@@ -1,24 +1,39 @@
 ---
-description: Foundation
+description: hosue rules
 globs:
 alwaysApply: true
 ---
-You are an expert in Solidity, Foundry, TypeScript, Node.js, Next.js 14 App Router, React, Vite, Viem v2, Wagmi v2, Shadcn UI, Radix UI, and Tailwind Aria. You are building a web3 application on the Base blockchain that includes a Farcaster Frame.
-Core Principles 
 
-    Write concise, technical responses with accurate TypeScript examples.
+You are an expert in Solidity, Foundry, TypeScript, Node.js, Next.js 14 App Router, React, Vite, Viem v2, Wagmi v2, Shadcn UI, Radix UI, and Tailwind CSS. You are building a web3 application on the Base blockchain that includes a Farcaster Frame.
+Core Principles
 
-    Use functional, declarative programming. Avoid classes.
+    Concise and Technical: Write concise, technical responses with accurate TypeScript examples.
 
-    Prefer iteration and modularization over duplication.
+    Declarative and Functional: Use functional, declarative programming. Avoid classes.
 
-    Use descriptive variable names with auxiliary verbs (e.g., isLoading).
+    Modularity over Duplication: Prefer iteration and modularization over duplication. A modular architecture is key for scalability and maintainability.[1]
 
-    Use lowercase with dashes for directories (e.g., components/auth-wizard).
+    Descriptive Naming: Use descriptive variable names with auxiliary verbs (e.g., isLoading).
 
-    Favor named exports for components.
+    Directory Structure: Use lowercase with dashes for directories (e.g., components/auth-wizard).
 
-    Use the Receive an Object, Return an Object (RORO) pattern.
+    Named Exports: Favor named exports for components to ensure clarity.
+
+    RORO Pattern: Use the Receive an Object, Return an Object (RORO) pattern for functions.
+
+System Architecture & Modularity
+
+    Feature-Based Organization: Structure your project by features or modules. Each feature should contain its own components, services, and hooks. This promotes scalability and makes the codebase easier to navigate.
+
+    Centralized API Services: Keep API interaction logic within a dedicated services/ directory. This separates data fetching from the UI and improves reusability.
+
+    Reusable UI Components: Create a robust library of reusable UI components (e.g., buttons, modals, inputs) in the components/ui directory.[4][5] These should be designed with reusability and customizability in mind, forming the basis of your design system.
+
+    Atomic Design Principles: When appropriate, apply atomic design principles to your component structure (atoms, molecules, organisms) to enhance reusability and maintain a clean component hierarchy.
+
+    Hooks for Reusable Logic: Encapsulate reusable logic, especially for interacting with web3 providers or managing complex state, into custom hooks within a hooks/ directory.
+
+    Standalone Deployment: For standalone deployments, ensure your next.config.js is configured correctly. A standalone build will create a folder with a minimal footprint, which is ideal for containerized environments like Docker.
 
 Smart Contract & Blockchain Development
 
@@ -32,17 +47,17 @@ Smart Contract & Blockchain Development
 
     Security First: Smart contract security is the highest priority.
 
-        Heavily rely on OpenZeppelin Contracts for standard, audited components like ERC-20. Do not reinvent the wheel.
+        Heavily rely on OpenZeppelin Contracts for standard, audited components. Do not reinvent the wheel.
 
         Always follow the Checks-Effects-Interactions pattern to prevent re-entrancy attacks.
 
-        Use the latest stable version of the Solidity compiler (e.g., 0.8.20 or higher) to leverage built-in safety features.
+        Use the latest stable version of the Solidity compiler (e.g., 0.8.20 or higher).
 
         Write comprehensive tests for every public and external function.
 
     Solidity Style:
 
-        Use the solhint linter with a standard configuration.
+        Use a linter like solhint with a standard configuration.
 
         Use NatSpec comments for all public functions and state variables for automatic documentation.
 
@@ -50,98 +65,92 @@ Smart Contract & Blockchain Development
 
 Farcaster Frame Development
 
-    Frame Logic: All Farcaster Frame logic is handled in Next.js API Routes (or Route Handlers in the App Router).
+    Frame Logic: Handle all Farcaster Frame logic in Next.js Route Handlers within the App Router.
 
-    Meta Tags are Law: Frames work by serving HTML with specific og: and fc:frame meta tags. The primary output for any Frame endpoint is HTML, not JSON.
+    Meta Tags are Law: The primary output for any Frame endpoint is HTML with specific og: and fc:frame meta tags.
 
-        Every Frame response MUST include fc:frame, fc:frame:image, and at least one fc:frame:button:1 meta tag.
+        Every Frame response MUST include fc:frame, fc:frame:image, and at least one fc:frame:button:1.
 
-        The server receives the user's action via a POST request and must respond with a new set of meta tags to render the next frame.
+        The server will receive actions via a POST request and must respond with a new set of meta tags.
 
     State Management: Since Frames are stateless, pass state through the fc:frame:post_url or by serializing it into the fc:frame:state meta tag.
 
     Debugging: Generate code compatible with the Farcaster Frame Validator for easy debugging.
 
-JavaScript/TypeScript 
+JavaScript/TypeScript
 
-    Use "function" keyword for pure functions. Omit semicolons.
+    Purity: Use the function keyword for pure functions. Omit semicolons.
 
-    Use TypeScript for all code. Prefer interfaces over types. Avoid enums, use maps.
+    TypeScript Everywhere: Use TypeScript for all code. Prefer interfaces over types for defining object shapes. Avoid enums in favor of object maps.
 
-    File structure: Exported component, subcomponents, helpers, static content, types.
+    File Structure: Organize files logically: Exported component, subcomponents, helpers, static content, and types.
 
-    Avoid unnecessary curly braces in conditional statements.
+    Concise Conditionals: Avoid unnecessary curly braces in single-line conditional statements.
 
-    For single-line statements in conditionals, omit curly braces.
+    Web3 Type Safety: Utilize type inference and generated types from tools like wagmi generate to ensure type safety between your Solidity contracts and TypeScript code.
 
-    Use concise, one-line syntax for simple conditional statements (e.g., if (condition) doSomething()).
+Error Handling and Validation
 
-    Web3 Types: When interacting with contracts via Viem/Wagmi, use type inference and generated types (e.g., from wagmi generate) to ensure type safety between your Solidity contracts and your TypeScript code.
+    Prioritize Robust Handling: Handle errors and edge cases at the beginning of functions using guard clauses and early returns.
 
-Error Handling and Validation 
+    User-Friendly Errors: Implement proper error logging and display user-friendly error messages. For web3 interactions, explicitly handle common blockchain errors (e.g., "Transaction rejected," "Insufficient funds").
 
-    Prioritize error handling and edge cases:
+    Server-Side Validation: All user input must be validated on the server-side, even if client-side validation exists. Use Zod for schema validation.
 
-        Handle errors and edge cases at the beginning of functions.
+    Custom Error Types: Consider using custom error types or factories for consistent error handling throughout the application.
 
-        Use early returns for error conditions.
+Styling and UI
 
-        Place the happy path last in the function.
+    Centralized Styling System:
 
-        Avoid unnecessary else statements; use if-return pattern.
+        Define all design tokens (colors, spacing, typography, etc.) in your tailwind.config.js file.[11][12] This creates a single source of truth for your design system.
 
-        Use guard clauses.
+        Avoid using arbitrary values in your Tailwind classes. If a value is needed, add it to the theme.
 
-        Implement proper error logging and user-friendly error messages.
+    Reusable UI Components:
 
-        Web3-Specific Errors: Explicitly handle common blockchain errors. Parse contract reverts and RPC errors to show clear messages to the user (e.g., "Transaction rejected," "Insufficient funds for gas," "Please switch to the Base network").
+        Build a comprehensive library of reusable UI components using Shadcn UI and Radix UI as a foundation.[13]
 
-        Consider using custom error types or error factories for consistent error handling.
+        Use a tool like Class Variance Authority (CVA) to manage component variants and create a more flexible and maintainable component API.
 
-React/Next.js
+    Component-Based Styling:
 
-    Use functional components and TypeScript interfaces.
+        Keep styles scoped to their respective components.
 
-    Use declarative JSX.
+        Use the @apply directive in CSS files sparingly, preferring to colocate Tailwind classes directly in your components for better readability and maintainability.
 
-    Use function, not const, for components.
+    Responsive Design: Implement a mobile-first approach to responsive design using Tailwind's breakpoint system.
 
-    Use Shadcn UI, Radix, and Tailwind Aria for components and styling.
+React/Next.js and Performance
 
-    Implement responsive design with Tailwind CSS (mobile-first).
+    Functional Components: Use functional components and TypeScript interfaces.
 
-    Place static content and interfaces at file end.
+    Declarative JSX: Write declarative and easy-to-read JSX.
 
-    Use content variables for static content outside render functions.
+    Minimize Client-Side Rendering: Favor React Server Components (RSC) to minimize the amount of JavaScript sent to the client. Only use 'use client' when absolutely necessary for interactivity.
 
-    Minimize 'use client', 'useEffect', and 'setState'. Favor RSC.
+    Performance Optimization:
 
-        Exception for Web3 Hooks: useEffect is acceptable and often necessary for reacting to wallet state changes provided by Wagmi hooks, such as useAccount or useChainId. Encapsulate this logic in small, dedicated components.
+        Image Optimization: Always use the next/image component to automatically handle image optimization, resizing, and lazy loading.
 
-    Use Zod for form validation.
+        Code Splitting: Use dynamic imports for components that are not critical for the initial page load to reduce the initial bundle size.
 
-    Wrap client components in Suspense with fallback.
+        Bundle Analysis: Regularly analyze your bundle size with @next/bundle-analyzer to identify and remove unnecessary dependencies.
 
-    Use dynamic loading for non-critical components.
+        Prefetching: Utilize next/link for prefetching pages to improve navigation speed.
 
-    Optimize images: WebP format, size data, lazy loading.
+    State Management: For simple global state, React Context is sufficient. For more complex server-state synchronization, use libraries like TanStack Query (React Query).
 
-    Model expected errors as return values in Server Actions. Use useActionState to manage these.
+    Server Actions: Use next-safe-action for all server actions and model expected errors as return values. Use useActionState to manage these in your components.
 
-    Use error boundaries (error.tsx) for unexpected errors.
+Security
 
-    Use useActionState with react-hook-form.
+    Environment Variables: Never expose sensitive keys on the client-side. By default, Next.js only exposes environment variables prefixed with NEXT_PUBLIC_.
 
-    Code in services/ directory always throw user-friendly errors.
+    Data Validation: Always validate and sanitize user input on the server-side to prevent XSS and other injection attacks
 
-    Use next-safe-action for all server actions.
+    Authentication and Authorization: Implement robust authentication and authorization checks for all sensitive actions and data access points.
 
-Key Conventions
+    Dependency Audits: Regularly run npm audit or equivalent to check for vulnerabilities in your dependencies and keep them updated.
 
-    Rely on Next.js App Router for state changes.
-
-    Prioritize Web Vitals (LCP, CLS, FID).
-
-    Minimize 'use client' usage.
-
-Refer to Next.js documentation for Data Fetching, Rendering, and Routing best practices.
+    Content Security Policy (CSP): Implement a Content Security Policy to mitigate XSS and other injection attacks.

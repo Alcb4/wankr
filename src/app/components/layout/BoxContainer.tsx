@@ -1,4 +1,5 @@
 import { type ReactNode, CSSProperties } from 'react'
+import { components } from '../../theme'
 
 interface BoxContainerProps {
   children: ReactNode
@@ -10,9 +11,9 @@ interface BoxContainerProps {
 export function BoxContainer({ children, minHeight = 'auto', padding = '2rem', style }: BoxContainerProps) {
   return (
     <div 
-      className="bg-card border border-border rounded-2xl backdrop-blur-md transition-all duration-300 hover:shadow-lg"
+      className={components.card.base + ' ' + components.card.hover + ' p-6'}
       style={{
-        padding,
+        padding: padding !== '2rem' ? padding : undefined, // Only override if custom padding is provided
         minHeight,
         maxWidth: '100%',
         ...style

@@ -1,6 +1,7 @@
 
 import type { LeaderboardEntry } from '../../config/types'
 import { formatNumber } from '../../utils/formatters'
+import { components, layout } from '../../theme'
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[]
@@ -10,9 +11,9 @@ interface LeaderboardTableProps {
 export function LeaderboardTable({ entries, isLoading }: LeaderboardTableProps) {
   if (isLoading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem', color: '#a0a0a0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-          <span style={{ animation: 'spin 1s linear infinite' }}>⏳</span>
+      <div className={layout.flex.center + ' py-8 text-muted-foreground'}>
+        <div className="flex items-center justify-center gap-2">
+          <span className="animate-spin">⏳</span>
           Loading leaderboard...
         </div>
       </div>
@@ -21,139 +22,62 @@ export function LeaderboardTable({ entries, isLoading }: LeaderboardTableProps) 
 
   if (entries.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem', color: '#a0a0a0' }}>
+      <div className={layout.flex.center + ' py-8 text-muted-foreground'}>
         No data available for this period
       </div>
     )
   }
 
   return (
-    <div style={{
-      maxHeight: '400px',
-      overflowY: 'auto',
-      minHeight: '200px'
-    }}>
-      <table style={{
-        width: '100%',
-        borderCollapse: 'collapse'
-      }}>
+    <div className="max-h-96 overflow-y-auto min-h-48">
+      <table className="w-full border-collapse">
         <thead>
-          <tr style={{
-            background: 'rgba(255, 255, 255, 0.02)',
-            borderBottom: '2px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <th style={{
-              padding: '0.75rem',
-              textAlign: 'left',
-              fontWeight: '600',
-              color: '#ff6b6b',
-              fontSize: '0.9rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+          <tr className={components.table.header}>
+            <th className={components.table.header}>
               Rank
             </th>
-            <th style={{
-              padding: '0.75rem',
-              textAlign: 'left',
-              fontWeight: '600',
-              color: '#ff6b6b',
-              fontSize: '0.9rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <th className={components.table.header}>
               Wallet/Handle
             </th>
-            <th style={{
-              padding: '0.75rem',
-              textAlign: 'left',
-              fontWeight: '600',
-              color: '#ff6b6b',
-              fontSize: '0.9rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <th className={components.table.header}>
               Transactions
             </th>
-            <th style={{
-              padding: '0.75rem',
-              textAlign: 'left',
-              fontWeight: '600',
-              color: '#ff6b6b',
-              fontSize: '0.9rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <th className={components.table.header}>
               Total WANKR
             </th>
-            <th style={{
-              padding: '0.75rem',
-              textAlign: 'left',
-              fontWeight: '600',
-              color: '#ff6b6b',
-              fontSize: '0.9rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <th className={components.table.header}>
               Link
             </th>
           </tr>
         </thead>
         <tbody>
           {entries.map((entry) => (
-            <tr key={entry.address} style={{
-              borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
-            }}>
-              <td style={{
-                padding: '0.75rem',
-                fontWeight: '700',
-                color: '#ff6b6b'
-              }}>
+            <tr key={entry.address} className={components.table.row}>
+              <td className={components.table.cell + ' font-bold text-primary'}>
                 #{entry.rank}
               </td>
-              <td style={{ padding: '0.75rem' }}>
+              <td className={components.table.cell}>
                 <div>
-                  <div style={{ fontWeight: '500', color: '#ffffff' }}>
+                  <div className="font-medium text-foreground">
                     {entry.displayName}
                   </div>
-                  <div style={{
-                    fontSize: '0.7rem',
-                    color: '#a0a0a0',
-                    textTransform: 'capitalize'
-                  }}>
+                  <div className="text-xs text-muted-foreground capitalize">
                     {entry.source}
                   </div>
                 </div>
               </td>
-              <td style={{
-                padding: '0.75rem',
-                color: '#a0a0a0',
-                fontSize: '0.9rem'
-              }}>
+              <td className={components.table.cell + ' text-muted-foreground text-sm'}>
                 {formatNumber(entry.transactionCount)} tx
               </td>
-              <td style={{
-                padding: '0.75rem',
-                fontWeight: '600',
-                color: '#ff6b6b'
-              }}>
+              <td className={components.table.cell + ' font-semibold text-primary'}>
                 {formatNumber(parseFloat(entry.totalWankr))} WANKR
               </td>
-              <td style={{ padding: '0.75rem' }}>
+              <td className={components.table.cell}>
                 <a 
                   href={`https://basescan.org/address/${entry.address}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    color: '#ff6b6b',
-                    textDecoration: 'none',
-                    fontSize: '0.8rem',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    background: 'rgba(255, 107, 107, 0.1)',
-                    border: '1px solid rgba(255, 107, 107, 0.2)',
-                    transition: 'all 0.2s ease'
-                  }}
+                  className={components.badge.primary + ' hover:bg-primary/20 hover:border-primary/40'}
                 >
                   🔗
                 </a>

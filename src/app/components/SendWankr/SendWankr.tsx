@@ -6,6 +6,8 @@ import { walletService } from '../../services/walletService'
 import { STANDARD_SHAME_AMOUNT } from '../../config/contract'
 import type { SendShameForm } from '../../config/types'
 import { showError, showSuccess } from '../../utils/ui'
+import { Button, Input } from '../ui'
+import { components } from '../../theme'
 
 export function SendWankr() {
   const [formData, setFormData] = useState<SendShameForm>({
@@ -77,36 +79,17 @@ export function SendWankr() {
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <label style={{
-          fontWeight: '500',
-          color: '#a0a0a0'
-        }}>
-          Target Address
-        </label>
-        <input
-          type="text"
-          name="targetAddress"
-          value={formData.targetAddress}
-          onChange={handleInputChange}
-          placeholder="0x..."
-          style={{
-            padding: '0.75rem',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            color: 'white',
-            fontSize: '1rem'
-          }}
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <Input
+        label="Target Address"
+        name="targetAddress"
+        value={formData.targetAddress}
+        onChange={handleInputChange}
+        placeholder="0x..."
+      />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-        <label style={{
-          fontWeight: '500',
-          color: '#a0a0a0'
-        }}>
+      <div className="flex flex-col gap-2">
+        <label className="font-medium text-muted-foreground">
           Reason for Shame
         </label>
         <textarea
@@ -115,46 +98,21 @@ export function SendWankr() {
           onChange={handleInputChange}
           placeholder="Why are you delivering shame?"
           rows={3}
-          style={{
-            padding: '0.75rem',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            color: 'white',
-            fontSize: '1rem',
-            resize: 'vertical'
-          }}
+          className={components.input.base + ' resize-vertical'}
         />
       </div>
 
-      <div style={{
-        padding: '0.75rem',
-        background: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: '8px',
-        fontSize: '0.9rem',
-        color: '#a0a0a0'
-      }}>
+      <div className={components.badge.primary}>
         <strong>Standard Shame Amount:</strong> {ethers.formatUnits(STANDARD_SHAME_AMOUNT, 18)} WANKR
       </div>
 
-      <button
+      <Button
         type="submit"
-        disabled={isSubmitting}
-        style={{
-          background: 'linear-gradient(45deg, #ff4757, #ff3742)',
-          border: 'none',
-          color: 'white',
-          padding: '1rem 2rem',
-          borderRadius: '12px',
-          fontSize: '1.1rem',
-          fontWeight: '600',
-          cursor: isSubmitting ? 'not-allowed' : 'pointer',
-          transition: 'all 0.3s ease',
-          opacity: isSubmitting ? 0.6 : 1
-        }}
+        isLoading={isSubmitting}
+        size="lg"
       >
         {isSubmitting ? 'Delivering Shame...' : 'Deliver 10 WANKR Shame'}
-      </button>
+      </Button>
     </form>
   )
 }

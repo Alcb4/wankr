@@ -1,69 +1,137 @@
-export { colors } from './colors'
-export { spacing, borderRadius, fontSize } from './spacing'
+// Centralized Design System for WANKR
+// This file serves as the single source of truth for all styling
 
-export const theme = {
-  colors: {
-    // Primary colors
-    primary: '#ff6b6b',
-    primaryGradient: 'linear-gradient(45deg, #ff6b6b, #ff8e53, #ff6b6b)',
-    secondary: '#ff8e53',
-    
-    // Background colors
-    background: 'linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%)',
-    cardBackground: 'rgba(255, 255, 255, 0.05)',
-    cardBorder: 'rgba(255, 255, 255, 0.1)',
-    
-    // Text colors
-    textPrimary: '#ffffff',
-    textSecondary: '#a0a0a0',
-    textMuted: '#888',
-    
-    // Status colors
-    success: '#2ed573',
-    error: '#ff4757',
-    warning: '#ffc107',
-    
-    // Button colors
-    buttonPrimary: 'linear-gradient(45deg, #ff6b6b, #ff8e53)',
-    buttonDanger: 'linear-gradient(45deg, #ff4757, #ff3742)',
-    buttonSecondary: 'rgba(255, 255, 255, 0.05)',
-    
-    // Input colors
-    inputBackground: 'rgba(255, 255, 255, 0.05)',
-    inputBorder: 'rgba(255, 255, 255, 0.1)',
-    
-    // Overlay colors
-    overlay: 'rgba(255, 255, 255, 0.02)',
-    overlayHover: 'rgba(255, 255, 255, 0.04)',
-    
-    // Live status
-    liveStatus: '#2ed573',
-    liveStatusBg: 'rgba(46, 213, 115, 0.1)'
+import { colors } from './colors'
+import { spacing } from './spacing'
+
+// Design Tokens
+export const tokens = {
+  colors,
+  spacing,
+  
+  // Typography
+  typography: {
+    fontFamily: {
+      sans: 'var(--font-geist-sans)',
+      mono: 'var(--font-geist-mono)',
+      wankr: 'var(--font-mouse-memoirs)',
+    },
+    fontSize: {
+      xs: '0.75rem',
+      sm: '0.875rem',
+      base: '1rem',
+      lg: '1.125rem',
+      xl: '1.25rem',
+      '2xl': '1.5rem',
+      '3xl': '1.875rem',
+      '4xl': '2.25rem',
+      '5xl': '3rem',
+      '6xl': '3.75rem',
+    },
+    fontWeight: {
+      normal: '400',
+      medium: '500',
+      semibold: '600',
+      bold: '700',
+      extrabold: '800',
+    },
   },
-  spacing: {
-    xs: '0.25rem',
-    sm: '0.5rem',
-    md: '1rem',
-    lg: '1.5rem',
-    xl: '2rem',
-    xxl: '2.5rem',
-    xxxl: '3rem'
-  },
+  
+  // Border Radius
   borderRadius: {
-    sm: '4px',
-    md: '6px',
-    lg: '8px',
-    xl: '12px',
-    xxl: '16px'
+    sm: '0.25rem',
+    md: '0.375rem',
+    lg: '0.5rem',
+    xl: '0.75rem',
+    '2xl': '1rem',
+    '3xl': '1.5rem',
   },
-  fontSize: {
-    xs: '0.75rem',
-    sm: '0.875rem',
-    md: '1rem',
-    lg: '1.125rem',
-    xl: '1.25rem',
-    xxl: '1.5rem',
-    xxxl: '2rem',
-    huge: '3.5rem'
-  }
+  
+  // Shadows
+  shadows: {
+    sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+    md: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+  },
+  
+  // Transitions
+  transitions: {
+    fast: '150ms ease-in-out',
+    normal: '300ms ease-in-out',
+    slow: '500ms ease-in-out',
+  },
 } as const
+
+// Component-Specific Styles
+export const components = {
+  // Button Variants
+  button: {
+    primary: 'bg-gradient-cta text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105',
+    secondary: 'bg-muted border border-border text-muted-foreground px-6 py-3 rounded-xl font-semibold hover:bg-muted/80 transition-all duration-300',
+    outline: 'border border-cyber text-cyber px-6 py-3 rounded-xl font-semibold hover:bg-cyber hover:text-white transition-all duration-300',
+    danger: 'bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-semibold hover:bg-destructive/90 transition-all duration-300',
+    disabled: 'opacity-60 cursor-not-allowed hover:scale-100',
+  },
+  
+  // Input Variants
+  input: {
+    base: 'p-3 border border-border rounded-lg bg-input text-foreground text-base focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200',
+    error: 'border-destructive focus:ring-destructive',
+  },
+  
+  // Card Variants
+  card: {
+    base: 'bg-card border border-border rounded-2xl backdrop-blur-md transition-all duration-300',
+    hover: 'hover:shadow-lg hover:bg-card/80',
+    interactive: 'hover:shadow-lg hover:bg-card/80 cursor-pointer',
+  },
+  
+  // Table Variants
+  table: {
+    header: 'bg-muted border-b-2 border-border p-3 text-left font-semibold text-primary text-sm uppercase tracking-wider',
+    row: 'border-b border-border/50 hover:bg-muted/30 transition-colors duration-200',
+    cell: 'p-3',
+  },
+  
+  // Badge Variants
+  badge: {
+    primary: 'inline-block px-2 py-0.5 rounded text-xs font-semibold bg-primary/20 text-primary',
+    secondary: 'inline-block px-2 py-0.5 rounded text-xs font-semibold bg-secondary/20 text-secondary',
+    destructive: 'inline-block px-2 py-0.5 rounded text-xs font-semibold bg-destructive/20 text-destructive',
+  },
+  
+  // Status Indicators
+  status: {
+    live: 'flex items-center gap-2 px-3 py-1 bg-liveStatusBg rounded-md border border-liveStatus',
+    loading: 'inline-block w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin',
+  },
+} as const
+
+// Layout Utilities
+export const layout = {
+  container: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+  section: 'py-8',
+  grid: {
+    '2-cols': 'grid grid-cols-1 lg:grid-cols-2 gap-6',
+    '3-cols': 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6',
+  },
+  flex: {
+    center: 'flex items-center justify-center',
+    between: 'flex items-center justify-between',
+    start: 'flex items-center justify-start',
+  },
+} as const
+
+// Animation Utilities
+export const animations = {
+  float: 'animate-float',
+  pulse: 'animate-pulse',
+  spin: 'animate-spin',
+  fadeIn: 'animate-in fade-in duration-300',
+  slideIn: 'animate-in slide-in-from-bottom-4 duration-300',
+} as const
+
+// Export everything for easy importing
+export { colors, spacing }
+export type { WankrColor, WankrGradient, WankrHoverEffect } from '../utils/colors'

@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useLeaderboard } from '../../hooks/useLeaderboard'
 import { LeaderboardTable } from './LeaderboardTable'
+import { Button } from '../ui'
+import { components, layout } from '../../theme'
 
 export function Leaderboard() {
   const {
@@ -20,7 +22,7 @@ export function Leaderboard() {
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem', color: '#ff4757' }}>
+      <div className={layout.flex.center + ' py-8 text-destructive'}>
         <div>Error: {error}</div>
       </div>
     )
@@ -29,62 +31,31 @@ export function Leaderboard() {
   return (
     <div>
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-        paddingBottom: '1rem',
-        marginBottom: '1rem'
-      }}>
+      <div className={layout.flex.between + ' border-b border-border pb-4 mb-4'}>
         {/* Tab Buttons */}
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button
+        <div className="flex gap-2">
+          <Button
+            variant={activeTab === 'received' ? 'primary' : 'secondary'}
+            size="sm"
             onClick={() => setActiveTab('received')}
-            style={{
-              background: activeTab === 'received' ? 'rgba(255, 107, 107, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-              border: activeTab === 'received' ? '1px solid rgba(255, 107, 107, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
-              color: activeTab === 'received' ? '#ff6b6b' : '#a0a0a0',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              fontWeight: '500'
-            }}
           >
             Top $WANKR&apos;s
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={activeTab === 'sent' ? 'primary' : 'secondary'}
+            size="sm"
             onClick={() => setActiveTab('sent')}
-            style={{
-              background: activeTab === 'sent' ? 'rgba(255, 107, 107, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-              border: activeTab === 'sent' ? '1px solid rgba(255, 107, 107, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
-              color: activeTab === 'sent' ? '#ff6b6b' : '#a0a0a0',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              fontWeight: '500'
-            }}
           >
             Shame Soldiers
-          </button>
+          </Button>
         </div>
 
         {/* Time Period Select */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="flex items-center gap-2">
           <select
             value={timePeriod}
             onChange={(e) => changeTimePeriod(e.target.value)}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#ffffff',
-              padding: '0.5rem 1rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem'
-            }}
+            className={components.input.base + ' text-sm'}
           >
             <option value="all">All Time</option>
             <option value="week">This Week</option>
@@ -101,23 +72,13 @@ export function Leaderboard() {
 
       {/* Expand Button */}
       {currentLeaderboard.length > 20 && (
-        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-          <button
+        <div className={layout.flex.center + ' mt-4'}>
+          <Button
+            variant="secondary"
             onClick={() => setShowAll(!showAll)}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#a0a0a0',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              fontWeight: '500',
-              fontSize: '0.9rem'
-            }}
           >
             {showAll ? `Show Top 20` : `Show All ${currentLeaderboard.length}`}
-          </button>
+          </Button>
         </div>
       )}
     </div>

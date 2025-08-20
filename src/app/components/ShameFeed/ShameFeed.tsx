@@ -2,45 +2,28 @@
 
 import { useShameFeed } from '../../hooks/useShameFeed'
 import { ShameItem } from './ShameItem'
+import { Button, Card } from '../ui'
+import { components, layout } from '../../theme'
 
 export function ShameFeed() {
   const { transactions, stats, loading, error, refresh } = useShameFeed()
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <div style={{ 
-          display: 'inline-block',
-          width: '2rem',
-          height: '2rem',
-          border: '3px solid rgba(255, 255, 255, 0.1)',
-          borderTop: '3px solid #ff6b6b',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
-        <p style={{ marginTop: '1rem', color: '#a0a0a0' }}>Loading shame feed...</p>
+      <div className={layout.flex.center + ' py-8'}>
+        <div className={components.status.loading}></div>
+        <p className="mt-4 text-muted-foreground">Loading shame feed...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <p style={{ color: '#ff4757', marginBottom: '1rem' }}>Error: {error}</p>
-        <button 
-          onClick={refresh}
-          style={{
-            background: 'linear-gradient(45deg, #ff6b6b, #ff8e53)',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '0.5rem 1rem',
-            color: 'white',
-            cursor: 'pointer',
-            fontSize: '0.9rem'
-          }}
-        >
+      <div className={layout.flex.center + ' py-8'}>
+        <p className="text-destructive mb-4">Error: {error}</p>
+        <Button variant="primary" onClick={refresh}>
           Retry
-        </button>
+        </Button>
       </div>
     )
   }
@@ -48,50 +31,29 @@ export function ShameFeed() {
   return (
     <div>
       {/* Stats and Live Status on same line */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '1rem',
-        padding: '0.5rem',
-        background: 'rgba(255, 255, 255, 0.02)',
-        borderRadius: '8px',
-        border: '1px solid rgba(255, 255, 255, 0.05)'
-      }}>
-        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.9rem' }}>
-          <span style={{ color: '#a0a0a0' }}>
-            Total Transactions: <span style={{ color: '#ff8e53', fontWeight: '600' }}>{stats.totalTransactions}</span>
-          </span>
-          <span style={{ color: '#a0a0a0' }}>
-            Total Shame Delivered: <span style={{ color: '#ff8e53', fontWeight: '600' }}>{stats.totalShameDelivered}</span>
-          </span>
-        </div>
+      <Card variant="base" padding="sm" className="mb-4">
+        <div className={layout.flex.between}>
+          <div className="flex gap-4 text-sm">
+            <span className="text-muted-foreground">
+              Total Transactions: <span className="text-secondary font-semibold">{stats.totalTransactions}</span>
+            </span>
+            <span className="text-muted-foreground">
+              Total Shame Delivered: <span className="text-secondary font-semibold">{stats.totalShameDelivered}</span>
+            </span>
+          </div>
 
-        {/* Live Status */}
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '0.5rem',
-          padding: '0.25rem 0.5rem',
-          background: 'rgba(46, 213, 115, 0.1)',
-          borderRadius: '6px',
-          border: '1px solid rgba(46, 213, 115, 0.2)'
-        }}>
-          <div style={{
-            width: '6px',
-            height: '6px',
-            background: '#2ed573',
-            borderRadius: '50%',
-            animation: 'pulse 2s infinite'
-          }}></div>
-          <span style={{ fontSize: '0.8rem', color: '#2ed573', fontWeight: '500' }}>Live</span>
+          {/* Live Status */}
+          <div className={components.status.live}>
+            <div className="w-2 h-2 bg-liveStatus rounded-full animate-pulse"></div>
+            <span className="text-xs text-liveStatus font-medium">Live</span>
+          </div>
         </div>
-      </div>
+      </Card>
 
       {/* Transactions */}
-      <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+      <div className="max-h-80 overflow-y-auto space-y-3">
         {transactions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '2rem', color: '#a0a0a0' }}>
+          <div className={layout.flex.center + ' py-8 text-muted-foreground'}>
             No shame transactions yet...
           </div>
         ) : (

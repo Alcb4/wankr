@@ -33,7 +33,7 @@
   --wankr-text-primary: 262 64% 52%;
   --wankr-text-secondary: 262 64% 52%;
   
-  /* Gradients */
+  /* Gradients - Original WANKR gradient with dark purple middle */
   --wankr-gradient-hero: linear-gradient(90deg, #F06BF2 0%, #7630D9 50%, #79F2E6 100%);
   --wankr-gradient-cta: linear-gradient(135deg, #7630D9 0%, #04588C 100%);
   --wankr-gradient-section: radial-gradient(circle at 20% 10%, #F06BF2 0%, transparent 40%), radial-gradient(circle at 80% 80%, #04588C 0%, transparent 45%);
@@ -58,7 +58,7 @@
 /* Dark mode styles - these will override the root styles */
 .dark {
   /* Wankr Color Scheme - Dark Mode */
-  --background: 0 0% 10%;
+  --background: 0 0% 0%; /* Pure black background like original */
   --foreground: 0 0% 100%;
   --card: 0 0% 16%;
   --card-foreground: 0 0% 100%;
@@ -177,4 +177,54 @@ body {
 
 .animate-float {
   animation: float 6s ease-in-out infinite;
+}
+
+/* WANKR Dark Glass Morphism Cards */
+.bg-card {
+  background: rgba(26, 22, 32, 0.8) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.border-border {
+  border-color: rgba(118, 48, 217, 0.2) !important;
+}
+
+.bg-muted {
+  background: rgba(26, 22, 32, 0.6) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.bg-input {
+  background: rgba(26, 22, 32, 0.7) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Improved Text Readability for Dark Theme */
+.text-foreground {
+  color: #FFFFFF !important; /* Pure white for maximum readability */
+}
+
+.text-muted-foreground {
+  color: #E0E0E0 !important; /* Light gray for secondary text */
+}
+
+/* Keep WANKR brand colors for interactive elements only */
+.text-primary {
+  color: #7630D9 !important; /* Keep purple for buttons, links, etc. */
+}
+
+.text-secondary {
+  color: #79F2E6 !important; /* Original green accent for better WANKR theme */
+}
+
+/* Ensure form inputs have good contrast */
+input, textarea, select {
+  color: #FFFFFF !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #B0B0B0 !important;
 }
