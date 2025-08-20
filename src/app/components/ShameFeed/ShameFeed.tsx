@@ -1,12 +1,29 @@
 "use client"
 
+import { useEffect } from 'react'
 import { useShameFeed } from '../../hooks/useShameFeed'
+import { enhancedShameFeedService } from '../../services/enhancedShameFeedService'
 import { ShameItem } from './ShameItem'
 import { Button, Card } from '../ui'
 import { components, layout } from '../../theme'
 
 export function ShameFeed() {
   const { transactions, stats, loading, error, refresh } = useShameFeed()
+
+  // Listen for refresh events from SendWankr component
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('🔔 ShameFeed: Received refresh event, calling refresh...')
+      refresh()
+    }
+
+    window.addEventListener('refreshShameFeed', handleRefresh)
+    console.log('👂 ShameFeed: Listening for refresh events')
+    
+    return () => {
+      window.removeEventListener('refreshShameFeed', handleRefresh)
+    }
+  }, [refresh])
 
   if (loading) {
     return (
@@ -43,9 +60,18 @@ export function ShameFeed() {
           </div>
 
           {/* Live Status */}
-          <div className={components.status.live}>
-            <div className="w-2 h-2 bg-liveStatus rounded-full animate-pulse"></div>
-            <span className="text-xs text-liveStatus font-medium">Live</span>
+          <div className="flex items-center gap-2 px-3 py-1 rounded-md border" style={{ 
+            backgroundColor: error ? 'rgba(255, 71, 87, 0.1)' : 'rgba(46, 213, 115, 0.1)', 
+            borderColor: error ? '#ff4757' : '#2ed573' 
+          }}>
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ 
+              backgroundColor: error ? '#ff4757' : '#2ed573' 
+            }}></div>
+            <span className="text-xs font-medium" style={{ 
+              color: error ? '#ff4757' : '#2ed573' 
+            }}>
+              {error ? 'Error' : 'Live'}
+            </span>
           </div>
         </div>
       </Card>
@@ -58,7 +84,7 @@ export function ShameFeed() {
           </div>
         ) : (
           transactions.map((shame, index) => (
-            <ShameItem key={`${shame.transactionHash}-${index}`} shame={shame} isNew={shame.isNew} />
+            <ShameItem key={`${shame.hash}-${index}`} shame={shame} isNew={shame.isNew} />
           ))
         )}
       </div>

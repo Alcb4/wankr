@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@coinbase/onchainkit": "^0.38.19",
     "@duneanalytics/client-sdk": "^0.2.5",
     "@neynar/nodejs-sdk": "^3.34.0",
     "dotenv": "^17.2.1",

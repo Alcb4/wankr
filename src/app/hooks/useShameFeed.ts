@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { apiService } from '../services/apiService'
-import type { ShameTransaction, ShameFeedStats } from '../config/types'
+import { enhancedShameFeedService } from '../services/enhancedShameFeedService'
+import type { ShameTransaction, ShameFeedStats } from '../types/shame-feed'
 
 interface TransactionWithNewFlag extends ShameTransaction {
   isNew?: boolean
@@ -13,29 +13,38 @@ export function useShameFeed() {
   const [stats, setStats] = useState<ShameFeedStats>({
     totalTransactions: 0,
     totalShameDelivered: 0,
-    lastUpdate: ''
+    uniqueShamers: 0,
+    uniqueShamed: 0,
+    lastUpdate: '',
+    averageJudgment: 0
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const previousTransactionHashes = useRef<Set<string>>(new Set())
 
-  // Load shame data
+  // Load shame data from enhanced service
   const loadData = useCallback(async () => {
     try {
+      console.log('🔄 useShameFeed: Loading data from enhanced service...')
       setError(null)
   
-      const data = await apiService.getShameFeed()
-      const newTransactions = data.shameHistory as TransactionWithNewFlag[]
+      const data = await enhancedShameFeedService.getShameFeed()
+      console.log('📊 useShameFeed: Received enhanced data', { 
+        transactionCount: data.transactions.length,
+        stats: data.stats 
+      })
+      
+      const newTransactions = data.transactions as TransactionWithNewFlag[]
       
       // Mark new transactions
       newTransactions.forEach(tx => {
-        if (tx.transactionHash && !previousTransactionHashes.current.has(tx.transactionHash)) {
+        if (tx.hash && !previousTransactionHashes.current.has(tx.hash)) {
           tx.isNew = true
           // Remove the new flag after animation completes
           setTimeout(() => {
             setTransactions(current => 
               current.map(t => 
-                t.transactionHash === tx.transactionHash 
+                t.hash === tx.hash 
                   ? { ...t, isNew: false }
                   : t
               )
@@ -47,7 +56,7 @@ export function useShameFeed() {
       // Update the set of known transaction hashes
       previousTransactionHashes.current = new Set(
         newTransactions
-          .map(tx => tx.transactionHash)
+          .map(tx => tx.hash)
           .filter((hash): hash is string => hash !== undefined)
       )
       
@@ -56,15 +65,26 @@ export function useShameFeed() {
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load shame feed')
-      console.error('❌ Error loading shame feed:', err)
+      console.error('❌ Error loading enhanced shame feed:', err)
     } finally {
       setLoading(false)
     }
   }, [])
 
+  // Listen for refresh events
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('🔄 useShameFeed: Received refresh event')
+      loadData()
+    }
+
+    window.addEventListener('refreshShameFeed', handleRefresh)
+    return () => window.removeEventListener('refreshShameFeed', handleRefresh)
+  }, [loadData])
+
   useEffect(() => {
     loadData()
-    const interval = setInterval(loadData, 10000) // Refresh every 10 seconds
+    const interval = setInterval(loadData, 35000) // Refresh every 35 seconds
     return () => clearInterval(interval)
   }, [loadData])
 

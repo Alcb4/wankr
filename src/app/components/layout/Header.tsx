@@ -24,7 +24,7 @@ export function Header() {
       </h2>
       
       {/* Action buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
+      <div className="flex flex-row gap-3 justify-center items-center mb-4">
         <a 
           href="https://github.com/mrpapawheelie/wankr/blob/main/assets/WANKR_Whitepaper.pdf"
           target="_blank"

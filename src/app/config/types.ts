@@ -64,5 +64,6 @@ export interface ApiResponse<T> {
 export interface SendShameForm {
   targetAddress: string
   reason: string
-  customAmount?: string
+  amount: number
+  handleType?: 'farcaster' | 'x' | 'basenames' | 'address'
 }

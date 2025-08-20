@@ -44,11 +44,24 @@ export class ShameFeedService extends EventEmitter {
   private topSoldiers: ShameSoldier[] = [];
   private pollingInterval: NodeJS.Timeout | null = null;
 
+  private static instance: ShameFeedService | null = null;
+  private lastDataFetch: number = 0;
+  private lastForceRefresh: number = 0;
+  private cacheTimeout = 35000; // 35 seconds cache (30s backend + 5s buffer)
+  private forceRefreshCooldown = 5000; // 5 seconds cooldown between force refreshes
+
   constructor(rpcUrl: string = 'https://mainnet.base.org', handleResolver?: HandleResolutionService) {
     super();
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
     this.contract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI, this.provider);
     this.handleResolver = handleResolver || new HandleResolutionService();
+  }
+
+  static getInstance(): ShameFeedService {
+    if (!ShameFeedService.instance) {
+      ShameFeedService.instance = new ShameFeedService();
+    }
+    return ShameFeedService.instance;
   }
 
   /**
@@ -122,7 +135,11 @@ export class ShameFeedService extends EventEmitter {
       });
 
     } catch (error) {
-      console.error('Error loading initial data:', error);
+      if (error instanceof Error && error.message.includes('rate limit')) {
+        console.log('⏳ Initial data: Rate limited - will retry later');
+      } else {
+        console.error('❌ Error loading initial data:', error instanceof Error ? error.message : 'Unknown error');
+      }
       // Fallback to basic transfer monitoring
       await this.loadRecentTransfers();
     }
@@ -146,12 +163,16 @@ export class ShameFeedService extends EventEmitter {
    */
   private async loadRecentTransfers() {
     try {
+      console.log('🔍 Loading recent transfers...');
+      
       // Get recent transfer events
       const currentBlock = await this.provider.getBlockNumber();
-      const fromBlock = currentBlock - 300; // Reduced from 2000 to 300 blocks (~10 minutes)
+      const fromBlock = currentBlock - 300; // Look back ~10 minutes (300 blocks) to reduce block counts
       
-      // Use provider to get logs directly
-      const filter = {
+      console.log('📦 Fetching logs from blocks', { fromBlock, currentBlock });
+      
+      // Get both WANKR transfers and Net Protocol messages
+      const wankrFilter = {
         address: WANKR_CONTRACT_ADDRESS,
         topics: [
           ethers.id('Transfer(address,address,uint256)') // Transfer event signature
@@ -160,11 +181,33 @@ export class ShameFeedService extends EventEmitter {
         toBlock: currentBlock
       };
       
-      const logs = await this.provider.getLogs(filter);
+      const netProtocolFilter = {
+        address: '0x00000000b24d62781db359b07880a105cd0b64e6', // Net Protocol contract
+        topics: [
+          ethers.id('MessageSent(address,string,uint256)') // MessageSent event signature
+        ],
+        fromBlock: fromBlock,
+        toBlock: currentBlock
+      };
+      
+      const [wankrLogs, netProtocolLogs] = await Promise.all([
+        this.provider.getLogs(wankrFilter),
+        this.provider.getLogs(netProtocolFilter)
+      ]);
+      
+      console.log('📊 Found logs:', { 
+        wankrLogs: wankrLogs.length, 
+        netProtocolLogs: netProtocolLogs.length 
+      });
+      
+      // For now, just use WANKR logs (we'll enhance this later to match messages)
+      const logs = wankrLogs;
       
 
       
       // Filter and limit to last 20 transactions
+      console.log('🔍 Processing', logs.length, 'transfer logs...');
+      
       const filteredLogs = logs.slice(-20).filter((log: ethers.Log) => {
         const iface = new ethers.Interface([
           'event Transfer(address indexed from, address indexed to, uint256 value)'
@@ -172,11 +215,22 @@ export class ShameFeedService extends EventEmitter {
         const decoded = iface.parseLog(log);
         const amount = parseFloat(ethers.formatUnits(decoded?.args?.[2] || 0, 18));
         const roundedAmount = Math.round(amount);
+        
+        // Only log transactions that will be included to reduce noise
+        if (roundedAmount >= 1 && (roundedAmount <= 10 || roundedAmount === 69)) {
+          console.log('💰 Including transaction:', { 
+            amount: roundedAmount, 
+            hash: log.transactionHash?.slice(0, 10) + '...'
+          });
+        }
+        
         return roundedAmount >= 1 && (roundedAmount <= 10 || roundedAmount === 69); // Show transactions >= 1 AND (≤ 10 WANKR OR exactly 69 WANKR)
       });
+      
+      console.log('✅ Filtered to', filteredLogs.length, 'shame transactions');
 
-      // Load transactions without handle resolution initially (for performance)
-      this.shameHistory = filteredLogs.map((log: ethers.Log) => {
+      // Load transactions and match with Net Protocol messages
+      this.shameHistory = await Promise.all(filteredLogs.map(async (log: ethers.Log) => {
         const iface = new ethers.Interface([
           'event Transfer(address indexed from, address indexed to, uint256 value)'
         ]);
@@ -187,12 +241,15 @@ export class ShameFeedService extends EventEmitter {
         const rawAmount = parseFloat(ethers.formatUnits(decoded?.args?.[2] || 0, 18));
         const roundedAmount = Math.round(rawAmount);
         
+        // Try to find matching Net Protocol message
+        const matchingNetMessage = await this.findMatchingNetMessage(log.transactionHash, from, to, roundedAmount);
+        
         return {
           from,
           to,
           amount: roundedAmount.toString(), // Use rounded amount for display
-          timestamp: Math.floor(Date.now() / 1000), // Approximate
-          reason: '',
+          timestamp: log.blockNumber ? Math.floor(Date.now() / 1000) : Math.floor(Date.now() / 1000), // Will be updated with actual block timestamp
+          reason: matchingNetMessage?.reason || '',
           transactionHash: log.transactionHash,
           blockNumber: log.blockNumber,
           fromDisplayName: this.shortenAddress(from),
@@ -200,7 +257,13 @@ export class ShameFeedService extends EventEmitter {
           fromSource: 'shortened' as const,
           toSource: 'shortened' as const
         };
-      });
+      }));
+
+      // Sort by block number (newest first) and update timestamps
+      this.shameHistory.sort((a, b) => (b.blockNumber || 0) - (a.blockNumber || 0));
+      
+      // Update timestamps with actual block timestamps (if available)
+      await this.updateTransactionTimestamps();
 
       // Now resolve handles for the loaded transactions
 
@@ -211,14 +274,25 @@ export class ShameFeedService extends EventEmitter {
         transaction.fromSource = 'shortened';
         transaction.toSource = 'shortened';
         
-        // Process handle resolution in background (non-blocking)
-        this.resolveHandlesInBackground(transaction);
+        // Skip background handle resolution to reduce API calls
+        // this.resolveHandlesInBackground(transaction);
       }
 
 
     } catch (error) {
-      console.error('Error loading recent transfers:', error);
-      this.shameHistory = [];
+      if (error instanceof Error) {
+        if (error.message.includes('rate limit') || error.message.includes('over rate limit')) {
+          console.log('⏳ Rate limited - using cached data');
+        } else {
+          console.error('❌ Error loading recent transfers:', error.message);
+        }
+      } else {
+        console.error('❌ Unknown error loading recent transfers');
+      }
+      // Don't clear history on rate limit errors, keep existing data
+      if (!(error instanceof Error && error.message.includes('rate limit'))) {
+        this.shameHistory = [];
+      }
     }
   }
 
@@ -231,16 +305,20 @@ export class ShameFeedService extends EventEmitter {
       clearInterval(this.pollingInterval);
     }
 
-    // Poll every 60 seconds
+    // Poll every 30 seconds as per architecture
     this.pollingInterval = setInterval(async () => {
       if (!this.isMonitoring) return;
 
       try {
         await this.checkForNewTransactions();
       } catch (error) {
-        console.error('Error in polling:', error);
+        if (error instanceof Error && error.message.includes('rate limit')) {
+          console.log('⏳ Polling: Rate limited - skipping this cycle');
+        } else {
+          console.error('❌ Error in polling:', error instanceof Error ? error.message : 'Unknown error');
+        }
       }
-    }, 60000); // 60 seconds
+    }, 30000); // 30 seconds
   }
 
   /**
@@ -291,8 +369,8 @@ export class ShameFeedService extends EventEmitter {
       // Emit the new transaction immediately
       this.emit('newShameTransaction', enrichedShameTx);
 
-      // Process handle resolution in background (non-blocking)
-      this.resolveHandlesInBackground(enrichedShameTx);
+      // Skip background handle resolution to reduce API calls
+      // this.resolveHandlesInBackground(enrichedShameTx);
     } catch (error) {
       console.error(`❌ Error processing shame transaction: ${shameTx.transactionHash}`, error);
     }
@@ -312,7 +390,11 @@ export class ShameFeedService extends EventEmitter {
         await this.checkTransferTransactions();
       }
     } catch (error) {
-      console.error('Error checking for new transactions:', error);
+      if (error instanceof Error && error.message.includes('rate limit')) {
+        console.log('⏳ New transactions check: Rate limited');
+      } else {
+        console.error('❌ Error checking for new transactions:', error instanceof Error ? error.message : 'Unknown error');
+      }
     }
   }
 
@@ -352,8 +434,8 @@ export class ShameFeedService extends EventEmitter {
       
       if (fromBlock > currentBlock) return;
 
-      // Use provider to get logs directly
-      const filter = {
+      // Get both WANKR transfers and Net Protocol messages
+      const wankrFilter = {
         address: WANKR_CONTRACT_ADDRESS,
         topics: [
           ethers.id('Transfer(address,address,uint256)') // Transfer event signature
@@ -362,7 +444,22 @@ export class ShameFeedService extends EventEmitter {
         toBlock: currentBlock
       };
       
-      const logs = await this.provider.getLogs(filter);
+      const netProtocolFilter = {
+        address: '0x00000000b24d62781db359b07880a105cd0b64e6', // Net Protocol contract
+        topics: [
+          ethers.id('MessageSent(address,string,uint256)') // MessageSent event signature
+        ],
+        fromBlock: fromBlock,
+        toBlock: currentBlock
+      };
+      
+      const [wankrLogs, netProtocolLogs] = await Promise.all([
+        this.provider.getLogs(wankrFilter),
+        this.provider.getLogs(netProtocolFilter)
+      ]);
+      
+      // For now, just use WANKR logs (we'll enhance this later to match messages)
+      const logs = wankrLogs;
       
       for (const log of logs) {
         // Decode the log data
@@ -401,7 +498,11 @@ export class ShameFeedService extends EventEmitter {
       
       this.lastProcessedBlock = currentBlock;
     } catch (error) {
-      console.error('Error checking transfer transactions:', error);
+      if (error instanceof Error && error.message.includes('rate limit')) {
+        console.log('⏳ Transfer check: Rate limited - keeping current data');
+      } else {
+        console.error('❌ Error checking transfer transactions:', error instanceof Error ? error.message : 'Unknown error');
+      }
     }
   }
 
@@ -500,24 +601,167 @@ export class ShameFeedService extends EventEmitter {
   }
 
   /**
-   * Get shame feed data (history + stats)
+   * Force refresh the shame feed (clear cache and reload)
+   */
+  async forceRefresh() {
+    const now = Date.now();
+    
+    // Check cooldown to prevent rapid consecutive calls
+    if (now - this.lastForceRefresh < this.forceRefreshCooldown) {
+      console.log('⏳ Force refresh on cooldown - using cached data');
+      return;
+    }
+    
+    console.log('🔄 Force refreshing shame feed...');
+    this.lastForceRefresh = now;
+    this.lastDataFetch = 0; // Clear cache
+    await this.loadRecentTransfers();
+  }
+
+  /**
+   * Get shame feed data (history + stats) with caching
    */
   async getShameFeed() {
-    // Start monitoring if not already started
-    if (!this.isMonitoring) {
-      await this.startMonitoring();
+    const now = Date.now();
+    
+    console.log('🔍 getShameFeed called', {
+      lastDataFetch: this.lastDataFetch,
+      cacheTimeout: this.cacheTimeout,
+      timeSinceLastFetch: now - this.lastDataFetch,
+      isMonitoring: this.isMonitoring,
+      shameHistoryLength: this.shameHistory.length
+    });
+    
+    // Return cached data if available and not expired (35s cache)
+    if (this.lastDataFetch > 0 && (now - this.lastDataFetch) < this.cacheTimeout && this.shameHistory.length > 0) {
+      console.log('📋 Returning cached shame feed data (no RPC call)');
+      return {
+        shameHistory: this.shameHistory,
+        stats: this.getShameStats()
+      };
     }
 
-    // Get current shame history with resolved handles
-    const shameHistory = await this.refreshShameHistoryWithHandles();
+    // Start monitoring if not already started
+    if (!this.isMonitoring) {
+      console.log('🚀 Starting monitoring (30s backend polling)...');
+      await this.startMonitoring();
+    } else {
+      console.log('🔄 Forcing refresh of recent transfers (RPC call)...');
+      await this.loadRecentTransfers();
+    }
+
+    // Update cache timestamp
+    this.lastDataFetch = now;
     
-    // Get stats
+    // Get stats (no external calls needed)
     const stats = this.getShameStats();
 
+    console.log('📊 Returning fresh shame feed data', {
+      shameHistoryLength: this.shameHistory.length,
+      stats
+    });
+
     return {
-      shameHistory,
+      shameHistory: this.shameHistory,
       stats
     };
+  }
+
+  /**
+   * Update transaction timestamps with actual block timestamps
+   */
+  private async updateTransactionTimestamps() {
+    try {
+      // Get unique block numbers
+      const blockNumbers = [...new Set(this.shameHistory.map(tx => tx.blockNumber).filter(Boolean))];
+      
+      if (blockNumbers.length === 0) return;
+      
+      // Fetch block timestamps in batches
+      const blockTimestamps: { [blockNumber: number]: number } = {};
+      
+      for (const blockNumber of blockNumbers) {
+        if (blockNumber === undefined) continue;
+        try {
+          const block = await this.provider.getBlock(blockNumber);
+          if (block) {
+            blockTimestamps[blockNumber] = block.timestamp;
+          }
+        } catch (error) {
+          console.log(`⏳ Could not fetch timestamp for block ${blockNumber}, using current time`);
+          blockTimestamps[blockNumber] = Math.floor(Date.now() / 1000);
+        }
+      }
+      
+      // Update transaction timestamps
+      this.shameHistory.forEach(tx => {
+        if (tx.blockNumber && blockTimestamps[tx.blockNumber as number]) {
+          tx.timestamp = blockTimestamps[tx.blockNumber as number];
+        }
+      });
+      
+      console.log(`✅ Updated timestamps for ${this.shameHistory.length} transactions`);
+    } catch (error) {
+      console.log('⚠️ Could not update transaction timestamps, using current time');
+    }
+  }
+
+  /**
+   * Find matching Net Protocol message for a WANKR transfer
+   */
+  private async findMatchingNetMessage(transactionHash: string, from: string, to: string, amount: number): Promise<{ reason: string } | null> {
+    try {
+      // Create Net Protocol contract instance
+      const netContract = new ethers.Contract('0x00000000b24d62781db359b07880a105cd0b64e6', [
+        'function getMessageForAppTopic(address app, string topic) external view returns (uint256[] messageIds)',
+        'function getMessage(uint256 messageId) external view returns (string text, string topic, bytes data, uint256 timestamp)'
+      ], this.provider);
+      
+      // Get recent messages for the 'wankr-shame' topic
+      // Using zero address as app for now (we might need to use our app address later)
+      const messageIds = await netContract.getMessageForAppTopic(ethers.ZeroAddress, 'wankr-shame');
+      
+      // Check the last few messages for a match
+      for (let i = Math.max(0, messageIds.length - 10); i < messageIds.length; i++) {
+        try {
+          const messageId = messageIds[i];
+          const message = await netContract.getMessage(messageId);
+          
+          // Try to parse the message data
+          const messageText = message[0];
+          const messageData = message[2];
+          
+          // Check if this message mentions our transaction or addresses
+          if (messageText.includes(from.toLowerCase()) && 
+              messageText.includes(to.toLowerCase()) && 
+              messageText.includes(amount.toString())) {
+            
+            // Try to extract reason from message data if it's JSON
+            try {
+              const dataString = ethers.toUtf8String(messageData);
+              const parsedData = JSON.parse(dataString);
+              if (parsedData.reason) {
+                console.log('🔗 Found matching Net Protocol message:', parsedData.reason);
+                return { reason: parsedData.reason };
+              }
+            } catch (parseError) {
+              // If not JSON, try to extract reason from message text
+              const reasonMatch = messageText.match(/reason:\s*"([^"]+)"/);
+              if (reasonMatch && reasonMatch[1]) {
+                console.log('🔗 Found matching Net Protocol message:', reasonMatch[1]);
+                return { reason: reasonMatch[1] };
+              }
+            }
+          }
+        } catch (msgError) {
+          console.log('⚠️ Could not fetch message:', msgError);
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Could not fetch Net Protocol messages:', error);
+    }
+    
+    return null;
   }
 
   /**

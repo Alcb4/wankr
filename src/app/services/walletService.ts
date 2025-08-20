@@ -11,6 +11,27 @@ class WalletService {
     isConnecting: false
   }
 
+  constructor() {
+    // Auto-reconnect if previously connected
+    this.initializeConnection()
+  }
+
+  private async initializeConnection() {
+    if (typeof window === 'undefined') return
+    
+    try {
+      const wasConnected = localStorage.getItem('wankr-wallet-connected')
+      if (wasConnected === 'true' && window.ethereum) {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' }) as string[]
+        if (accounts.length > 0) {
+          await this.connectWallet(true) // true = skip signature for auto-reconnect
+        }
+      }
+    } catch (error) {
+      console.log('Auto-reconnect failed:', error)
+    }
+  }
+
   private contractState: ContractState = {
     contract: null,
     provider: null,
@@ -43,7 +64,7 @@ class WalletService {
   }
 
   // Connect wallet
-  async connectWallet(): Promise<void> {
+  async connectWallet(skipSignature = false): Promise<void> {
     try {
       this.walletState.isConnecting = true
       this.notifyListeners()
@@ -53,7 +74,7 @@ class WalletService {
         throw new Error('MetaMask is not installed. Please install MetaMask to use WANKR.')
       }
 
-      // Request account access
+      // Request account access - force fresh connection
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts'
       }) as string[]
@@ -67,6 +88,12 @@ class WalletService {
       // Set up provider and signer
       const provider = new ethers.BrowserProvider(window.ethereum)
       const signer = await provider.getSigner()
+
+      // Force user to sign a message to ensure fresh connection (unless auto-reconnecting)
+      if (!skipSignature) {
+        const message = `Connect to WANKR App\n\nTimestamp: ${Date.now()}`
+        await signer.signMessage(message)
+      }
 
       // Create contract instance
       const contract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI, signer)
@@ -91,7 +118,12 @@ class WalletService {
       // Set up event listeners
       this.setupEventListeners()
 
-      showSuccess('Wallet connected successfully!')
+      // Remember connection for auto-reconnect
+      localStorage.setItem('wankr-wallet-connected', 'true')
+
+      if (!skipSignature) {
+        showSuccess('Wallet connected successfully!')
+      }
       this.notifyListeners()
 
     } catch (error) {
@@ -153,8 +185,23 @@ class WalletService {
       provider: null,
       signer: null
     }
+    
+    // Clear connection memory
+    localStorage.removeItem('wankr-wallet-connected')
+    
     this.notifyListeners()
     showSuccess('Wallet disconnected')
+  }
+
+  // Resolve address or handle to wallet address
+  async resolveAddress(input: string): Promise<string> {
+    // For now, only support direct Ethereum addresses
+    // TODO: Implement Base Names, Farcaster, and X handle resolution
+    if (ethers.isAddress(input)) {
+      return input
+    }
+    
+    throw new Error(`Invalid address format: ${input}. Only Ethereum addresses are currently supported.`)
   }
 }
 

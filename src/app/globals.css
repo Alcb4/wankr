@@ -25,13 +25,14 @@
   --input: 240 10% 96%;
   --ring: 262 64% 52%;
   
-  /* Wankr Custom Colors */
-  --wankr-primary: 262 64% 52%;
-  --wankr-secondary: 183 89% 72%;
-  --wankr-accent: 300 89% 66%;
-  --wankr-cyber: 207 95% 28%;
-  --wankr-text-primary: 262 64% 52%;
-  --wankr-text-secondary: 262 64% 52%;
+  /* Official WANKR Custom Colors (Adobe Color Theme) */
+  --wankr-primary: 264 68% 51%; /* #7630D9 */
+  --wankr-secondary: 174 82% 71%; /* #79F2E6 */
+  --wankr-accent: 299 83% 68%; /* #F06BF2 */
+  --wankr-cyber: 202 94% 28%; /* #04588C */
+  --wankr-dark-purple: 275 52% 29%; /* #532473 */
+  --wankr-text-primary: 264 68% 51%;
+  --wankr-text-secondary: 174 82% 71%;
   
   /* Gradients - Original WANKR gradient with dark purple middle */
   --wankr-gradient-hero: linear-gradient(90deg, #F06BF2 0%, #7630D9 50%, #79F2E6 100%);
@@ -78,13 +79,14 @@
   --input: 0 0% 16%;
   --ring: 262 64% 52%;
   
-  /* Wankr Custom Colors - Dark Mode */
-  --wankr-primary: 262 64% 52%;
-  --wankr-secondary: 183 89% 72%;
-  --wankr-accent: 300 89% 66%;
-  --wankr-cyber: 207 95% 28%;
+  /* Official WANKR Custom Colors - Dark Mode */
+  --wankr-primary: 264 68% 51%; /* #7630D9 */
+  --wankr-secondary: 174 82% 71%; /* #79F2E6 */
+  --wankr-accent: 299 83% 68%; /* #F06BF2 */
+  --wankr-cyber: 202 94% 28%; /* #04588C */
+  --wankr-dark-purple: 275 52% 29%; /* #532473 */
   --wankr-text-primary: 0 0% 100%;
-  --wankr-text-secondary: 183 89% 72%;
+  --wankr-text-secondary: 174 82% 71%;
   
   /* Chart Colors - Dark Mode */
   --chart-1: 262 64% 52%;
