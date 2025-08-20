@@ -190,14 +190,14 @@ export class ShameFeedService extends EventEmitter {
         toBlock: currentBlock
       };
       
-      const [wankrLogs, netProtocolLogs] = await Promise.all([
+      const [wankrLogs, _netProtocolLogs] = await Promise.all([
         this.provider.getLogs(wankrFilter),
         this.provider.getLogs(netProtocolFilter)
       ]);
       
       console.log('📊 Found logs:', { 
         wankrLogs: wankrLogs.length, 
-        netProtocolLogs: netProtocolLogs.length 
+        netProtocolLogs: _netProtocolLogs.length 
       });
       
       // For now, just use WANKR logs (we'll enhance this later to match messages)
@@ -701,7 +701,7 @@ export class ShameFeedService extends EventEmitter {
       });
       
       console.log(`✅ Updated timestamps for ${this.shameHistory.length} transactions`);
-    } catch (error) {
+    } catch (_error) {
       console.log('⚠️ Could not update transaction timestamps, using current time');
     }
   }
@@ -744,21 +744,21 @@ export class ShameFeedService extends EventEmitter {
                 console.log('🔗 Found matching Net Protocol message:', parsedData.reason);
                 return { reason: parsedData.reason };
               }
-            } catch (parseError) {
-              // If not JSON, try to extract reason from message text
-              const reasonMatch = messageText.match(/reason:\s*"([^"]+)"/);
-              if (reasonMatch && reasonMatch[1]) {
-                console.log('🔗 Found matching Net Protocol message:', reasonMatch[1]);
-                return { reason: reasonMatch[1] };
-              }
-            }
+                    } catch (_parseError) {
+          // If not JSON, try to extract reason from message text
+          const reasonMatch = messageText.match(/reason:\s*"([^"]+)"/);
+          if (reasonMatch && reasonMatch[1]) {
+            console.log('🔗 Found matching Net Protocol message:', reasonMatch[1]);
+            return { reason: reasonMatch[1] };
+          }
+        }
           }
         } catch (msgError) {
           console.log('⚠️ Could not fetch message:', msgError);
         }
       }
-    } catch (error) {
-      console.log('⚠️ Could not fetch Net Protocol messages:', error);
+    } catch (_error) {
+      console.log('⚠️ Could not fetch Net Protocol messages:', _error);
     }
     
     return null;
@@ -795,8 +795,8 @@ export class ShameFeedService extends EventEmitter {
       // Emit an event to update the UI with the resolved handle
       this.emit('handleResolutionUpdate', transaction);
       
-    } catch (error) {
-      console.error(`❌ Background handle resolution failed for: ${transaction.transactionHash}`, error);
+    } catch (_error) {
+      console.error(`❌ Background handle resolution failed for: ${transaction.transactionHash}`, _error);
       // Keep the fallback values
       transaction.fromDisplayName = this.shortenAddress(transaction.from);
       transaction.toDisplayName = this.shortenAddress(transaction.to);

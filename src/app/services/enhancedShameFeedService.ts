@@ -54,7 +54,7 @@ export const enhancedShameFeedService = {
       
       if (response.ok) {
         const data = await response.json()
-        blockchainTransactions = data.shameHistory.map((tx: any) => ({
+        blockchainTransactions = data.shameHistory.map((tx: { transactionHash?: string; from: string; to: string; amount: string; reason?: string; timestamp: number; blockNumber?: number; fromDisplayName?: string; toDisplayName?: string; judgment?: string; fromSource?: string; toSource?: string }) => ({
           hash: tx.transactionHash || '',
           from: tx.from,
           to: tx.to,

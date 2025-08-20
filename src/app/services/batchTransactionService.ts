@@ -70,7 +70,11 @@ class BatchTransactionService {
       
       // Final fallback: simple WANKR transfer only
       console.log('Debug: Using simple WANKR transfer fallback')
-      return await (this.wankrContract!.connect(await this.provider!.getSigner()) as any).transfer(data.targetAddress, amountInWei)
+      const signer = await this.provider!.getSigner()
+      const wankrContractWithSigner = this.wankrContract!.connect(signer) as ethers.Contract & {
+        transfer: (to: string, amount: bigint) => Promise<ethers.TransactionResponse>
+      }
+      return await wankrContractWithSigner.transfer(data.targetAddress, amountInWei)
     }
   }
 

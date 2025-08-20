@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ethers } from 'ethers'
-import { Transaction, TransactionButton } from '@coinbase/onchainkit/transaction'
+import { Transaction, TransactionButton, type LifecycleStatus } from '@coinbase/onchainkit/transaction'
 import { walletService } from '../../services/walletService'
 
 import { getWankrAmountComment } from '../../utils/formatters'
@@ -19,7 +19,11 @@ export function SendWankr() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [resolvedAddress, setResolvedAddress] = useState<string>('')
   const [showTransaction, setShowTransaction] = useState(false)
-  const [transactionCalls, setTransactionCalls] = useState<any[]>([])
+  const [transactionCalls, setTransactionCalls] = useState<Array<{
+    to: `0x${string}`
+    data: `0x${string}`
+    value?: bigint
+  }>>([])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -159,29 +163,32 @@ export function SendWankr() {
     }
   }
 
-  const handleTransactionSuccess = async (receipt: any) => {
+  const handleTransactionSuccess = async (receipt: unknown) => {
     console.log('✅ Atomic transaction successful:', receipt)
     const shameLabel = getWankrAmountComment(formData.amount.toString())
-    showSuccess(`${shameLabel} shame delivered! Transaction: ${receipt.hash}`)
+    
+    // Type assertion for receipt
+    const txReceipt = receipt as { hash: string; blockNumber?: number }
+    showSuccess(`${shameLabel} shame delivered! Transaction: ${txReceipt.hash}`)
     
     // Store transaction in local storage immediately
     const { enhancedShameFeedService } = await import('../../services/enhancedShameFeedService')
     console.log('💾 Storing transaction in local storage:', {
-      hash: receipt.hash,
+      hash: txReceipt.hash,
       from: walletService.getWalletState().address,
       to: resolvedAddress,
       amount: formData.amount,
       message: formData.reason.trim() || undefined,
-      blockNumber: receipt.blockNumber
+      blockNumber: txReceipt.blockNumber
     })
     
     await enhancedShameFeedService.storeTransactionSuccess({
-      hash: receipt.hash,
+      hash: txReceipt.hash,
       from: walletService.getWalletState().address || '',
       to: resolvedAddress,
       amount: formData.amount,
       message: formData.reason.trim() || undefined,
-      blockNumber: receipt.blockNumber
+      blockNumber: txReceipt.blockNumber || 0
     })
     
     console.log('✅ Transaction stored successfully')
@@ -200,7 +207,7 @@ export function SendWankr() {
     await refreshShameFeed()
   }
 
-  const handleTransactionError = (error: any) => {
+  const handleTransactionError = (error: Error | { message?: string }) => {
     console.error('❌ Atomic transaction failed:', error)
     let errorMessage = 'Failed to deliver shame'
     if (error?.message) {
@@ -217,7 +224,7 @@ export function SendWankr() {
     setTransactionCalls([])
   }
 
-  const handleTransactionStatus = (status: any) => {
+  const handleTransactionStatus = (status: LifecycleStatus) => {
     console.log('🔄 Transaction status:', status)
   }
 

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useWallet } from '../../hooks/useWallet'
 import { Button, Modal } from '../ui'
-import { shortenAddress } from '../../utils/formatters'
+// import { shortenAddress } from '../../utils/formatters'
 
 export function WalletConnect() {
   const { address, balance, isConnected, isConnecting, connectWallet, disconnectWallet } = useWallet()

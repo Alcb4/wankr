@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useShameFeed } from '../../hooks/useShameFeed'
-import { enhancedShameFeedService } from '../../services/enhancedShameFeedService'
+// import { enhancedShameFeedService } from '../../services/enhancedShameFeedService'
 import { ShameItem } from './ShameItem'
 import { Button, Card } from '../ui'
 import { components, layout } from '../../theme'
