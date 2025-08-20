@@ -5,7 +5,7 @@ export class AddressResolutionX {
    * Resolve X (Twitter) handle to address
    * TODO: Implement with X API
    */
-  async resolveXHandle(handle: string): Promise<AddressResolution> {
+  async resolveXHandle(_handle: string): Promise<AddressResolution> {
     // TODO: Implement X handle resolution
     // This will use the X API to resolve Twitter handles to addresses
     

@@ -21,7 +21,6 @@ export function SendWankr() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResolving, setIsResolving] = useState(false)
   const [resolvedAddress, setResolvedAddress] = useState<string>('')
-  const [resolvedDisplayName, setResolvedDisplayName] = useState<string>('')
   const [showTransaction, setShowTransaction] = useState(false)
   const [transactionCalls, setTransactionCalls] = useState<Array<{
     to: `0x${string}`
@@ -38,14 +37,12 @@ export function SendWankr() {
     // Clear resolved address when input changes
     if (name === 'targetAddress') {
       setResolvedAddress('')
-      setResolvedDisplayName('')
     }
   }
 
   const handlePlatformChange = (platform: ResolutionPlatform) => {
     setSelectedPlatform(platform)
     setResolvedAddress('')
-    setResolvedDisplayName('')
   }
 
   const resolveHandle = async () => {
@@ -64,7 +61,6 @@ export function SendWankr() {
       )
       
       setResolvedAddress(resolution.address)
-      setResolvedDisplayName(resolution.displayName)
       
       console.log(`✅ Resolved to: ${resolution.address} (${resolution.displayName})`)
       showSuccess(`Resolved: ${resolution.displayName}`)
@@ -73,7 +69,6 @@ export function SendWankr() {
       console.error('❌ Handle resolution failed:', error)
       showError(error instanceof Error ? error.message : 'Failed to resolve handle')
       setResolvedAddress('')
-      setResolvedDisplayName('')
     } finally {
       setIsResolving(false)
     }
@@ -142,7 +137,6 @@ export function SendWankr() {
           )
           targetAddress = resolution.address
           setResolvedAddress(targetAddress)
-          setResolvedDisplayName(resolution.displayName)
           console.log('Debug: Address resolved to:', targetAddress)
         } catch (error) {
           console.error('Debug: Address resolution failed:', error)
@@ -224,7 +218,7 @@ export function SendWankr() {
     let blockNumber: number | undefined
     
     if (receipt && typeof receipt === 'object' && 'transactionReceipts' in receipt) {
-      const receipts = (receipt as any).transactionReceipts
+      const receipts = (receipt as { transactionReceipts: Array<{ hash?: string; transactionHash?: string; blockNumber?: number }> }).transactionReceipts
       if (Array.isArray(receipts) && receipts.length > 0) {
         const firstReceipt = receipts[0]
         transactionHash = firstReceipt.hash || firstReceipt.transactionHash
@@ -339,7 +333,7 @@ export function SendWankr() {
   }
 
   // Debug function to check localStorage
-  const debugLocalStorage = () => {
+  const debugLocalStorage = async () => {
     console.log('🔍 Debug: Checking localStorage...')
     
     // Test basic localStorage functionality
@@ -352,7 +346,7 @@ export function SendWankr() {
       console.error('🔍 Debug: localStorage test FAILED:', error)
     }
     
-    const { localStorageService } = require('../../services/localStorageService')
+    const { localStorageService } = await import('../../services/localStorageService')
     const transactions = localStorageService.getAllTransactions()
     console.log('🔍 Debug: localStorage transactions:', transactions)
     

@@ -5,7 +5,7 @@ export class AddressResolutionFarcaster {
    * Resolve Farcaster handle to address
    * TODO: Implement with Neynar API
    */
-  async resolveFarcasterHandle(handle: string): Promise<AddressResolution> {
+  async resolveFarcasterHandle(_handle: string): Promise<AddressResolution> {
     // TODO: Implement Farcaster handle resolution
     // This will use the Neynar API to resolve Farcaster handles to addresses
     
