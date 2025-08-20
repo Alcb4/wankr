@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { ethers } from 'ethers'
 import { Transaction, TransactionButton, type LifecycleStatus } from '@coinbase/onchainkit/transaction'
 import { walletService } from '../../services/walletService'
+import { addressResolutionService, type ResolutionPlatform } from '../../services/addressResolutionService'
 
 import { getWankrAmountComment } from '../../utils/formatters'
 import type { SendShameForm } from '../../config/types'
@@ -16,8 +17,11 @@ export function SendWankr() {
     reason: '',
     amount: 5 // Default to middle amount
   })
+  const [selectedPlatform, setSelectedPlatform] = useState<ResolutionPlatform>('wallet')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isResolving, setIsResolving] = useState(false)
   const [resolvedAddress, setResolvedAddress] = useState<string>('')
+  const [resolvedDisplayName, setResolvedDisplayName] = useState<string>('')
   const [showTransaction, setShowTransaction] = useState(false)
   const [transactionCalls, setTransactionCalls] = useState<Array<{
     to: `0x${string}`
@@ -34,6 +38,44 @@ export function SendWankr() {
     // Clear resolved address when input changes
     if (name === 'targetAddress') {
       setResolvedAddress('')
+      setResolvedDisplayName('')
+    }
+  }
+
+  const handlePlatformChange = (platform: ResolutionPlatform) => {
+    setSelectedPlatform(platform)
+    setResolvedAddress('')
+    setResolvedDisplayName('')
+  }
+
+  const resolveHandle = async () => {
+    if (!formData.targetAddress.trim()) {
+      showError('Please enter a target address or handle')
+      return
+    }
+
+    try {
+      setIsResolving(true)
+      console.log(`🔍 Resolving ${selectedPlatform} handle: ${formData.targetAddress}`)
+      
+      const resolution = await addressResolutionService.resolveHandle(
+        formData.targetAddress, 
+        selectedPlatform
+      )
+      
+      setResolvedAddress(resolution.address)
+      setResolvedDisplayName(resolution.displayName)
+      
+      console.log(`✅ Resolved to: ${resolution.address} (${resolution.displayName})`)
+      showSuccess(`Resolved: ${resolution.displayName}`)
+      
+    } catch (error) {
+      console.error('❌ Handle resolution failed:', error)
+      showError(error instanceof Error ? error.message : 'Failed to resolve handle')
+      setResolvedAddress('')
+      setResolvedDisplayName('')
+    } finally {
+      setIsResolving(false)
     }
   }
 
@@ -94,8 +136,13 @@ export function SendWankr() {
       if (!targetAddress) {
         try {
           console.log('Debug: Resolving address...')
-          targetAddress = await walletService.resolveAddress(formData.targetAddress)
+          const resolution = await addressResolutionService.resolveHandle(
+            formData.targetAddress, 
+            selectedPlatform
+          )
+          targetAddress = resolution.address
           setResolvedAddress(targetAddress)
+          setResolvedDisplayName(resolution.displayName)
           console.log('Debug: Address resolved to:', targetAddress)
         } catch (error) {
           console.error('Debug: Address resolution failed:', error)
@@ -151,7 +198,12 @@ export function SendWankr() {
         })
       }
 
+      console.log('🚀 TRANSACTION PREPARED!')
       console.log('Debug: Prepared calls for atomic transaction:', calls)
+      console.log('📊 Transaction breakdown:')
+      console.log(`   - WANKR Transfer: ${calls.length >= 1 ? '✅' : '❌'}`)
+      console.log(`   - Net Protocol Message: ${calls.length >= 2 ? '✅' : '❌'}`)
+      console.log(`   - Total calls: ${calls.length}`)
       setTransactionCalls(calls)
       setShowTransaction(true)
 
@@ -164,34 +216,57 @@ export function SendWankr() {
   }
 
   const handleTransactionSuccess = async (receipt: unknown) => {
+    console.log('🎉 TRANSACTION SUCCESS HANDLER CALLED!')
     console.log('✅ Atomic transaction successful:', receipt)
-    const shameLabel = getWankrAmountComment(formData.amount.toString())
     
-    // Type assertion for receipt
-    const txReceipt = receipt as { hash: string; blockNumber?: number }
-    showSuccess(`${shameLabel} shame delivered! Transaction: ${txReceipt.hash}`)
+    // Extract transaction hash from OnchainKit receipt
+    let transactionHash: string | undefined
+    let blockNumber: number | undefined
+    
+    if (receipt && typeof receipt === 'object' && 'transactionReceipts' in receipt) {
+      const receipts = (receipt as any).transactionReceipts
+      if (Array.isArray(receipts) && receipts.length > 0) {
+        const firstReceipt = receipts[0]
+        transactionHash = firstReceipt.hash || firstReceipt.transactionHash
+        blockNumber = firstReceipt.blockNumber
+        console.log('🔍 Extracted from receipt:', { transactionHash, blockNumber })
+      }
+    }
+    
+    if (!transactionHash) {
+      console.error('❌ Could not extract transaction hash from receipt')
+      showError('Transaction successful but could not get transaction hash')
+      return
+    }
+    
+    const shameLabel = getWankrAmountComment(formData.amount.toString())
+    showSuccess(`${shameLabel} shame delivered! Transaction: ${transactionHash}`)
     
     // Store transaction in local storage immediately
     const { enhancedShameFeedService } = await import('../../services/enhancedShameFeedService')
     console.log('💾 Storing transaction in local storage:', {
-      hash: txReceipt.hash,
+      hash: transactionHash,
       from: walletService.getWalletState().address,
       to: resolvedAddress,
       amount: formData.amount,
       message: formData.reason.trim() || undefined,
-      blockNumber: txReceipt.blockNumber
+      blockNumber
     })
     
-    await enhancedShameFeedService.storeTransactionSuccess({
-      hash: txReceipt.hash,
-      from: walletService.getWalletState().address || '',
-      to: resolvedAddress,
-      amount: formData.amount,
-      message: formData.reason.trim() || undefined,
-      blockNumber: txReceipt.blockNumber || 0
-    })
-    
-    console.log('✅ Transaction stored successfully')
+    try {
+      const stored = await enhancedShameFeedService.storeTransactionSuccess({
+        hash: transactionHash,
+        from: walletService.getWalletState().address || '',
+        to: resolvedAddress,
+        amount: formData.amount,
+        message: formData.reason.trim() || undefined,
+        blockNumber: Number(blockNumber) || 0
+      })
+      
+      console.log('✅ Transaction stored successfully:', stored)
+    } catch (error) {
+      console.error('❌ Failed to store transaction:', error)
+    }
     
     // Reset form
     setFormData({
@@ -208,6 +283,7 @@ export function SendWankr() {
   }
 
   const handleTransactionError = (error: Error | { message?: string }) => {
+    console.log('💥 TRANSACTION ERROR HANDLER CALLED!')
     console.error('❌ Atomic transaction failed:', error)
     let errorMessage = 'Failed to deliver shame'
     if (error?.message) {
@@ -225,6 +301,7 @@ export function SendWankr() {
   }
 
   const handleTransactionStatus = (status: LifecycleStatus) => {
+    console.log('📊 TRANSACTION STATUS HANDLER CALLED!')
     console.log('🔄 Transaction status:', status)
   }
 
@@ -261,6 +338,33 @@ export function SendWankr() {
     }
   }
 
+  // Debug function to check localStorage
+  const debugLocalStorage = () => {
+    console.log('🔍 Debug: Checking localStorage...')
+    
+    // Test basic localStorage functionality
+    try {
+      localStorage.setItem('test-key', 'test-value')
+      const testValue = localStorage.getItem('test-key')
+      console.log('🔍 Debug: localStorage test:', testValue === 'test-value' ? 'PASSED' : 'FAILED')
+      localStorage.removeItem('test-key')
+    } catch (error) {
+      console.error('🔍 Debug: localStorage test FAILED:', error)
+    }
+    
+    const { localStorageService } = require('../../services/localStorageService')
+    const transactions = localStorageService.getAllTransactions()
+    console.log('🔍 Debug: localStorage transactions:', transactions)
+    
+    // Also check raw localStorage
+    const keys = Object.keys(localStorage).filter(key => key.startsWith('wankr-shame-'))
+    console.log('🔍 Debug: localStorage keys:', keys)
+    keys.forEach(key => {
+      const data = localStorage.getItem(key)
+      console.log(`🔍 Debug: ${key}:`, data ? JSON.parse(data) : null)
+    })
+  }
+
   // Test contract connection on mount only if wallet is connected
   useEffect(() => {
     const contractState = walletService.getContractState()
@@ -283,16 +387,70 @@ export function SendWankr() {
           <label htmlFor="targetAddress" className="block text-sm font-medium text-muted-foreground mb-2">
             Target Address or Handle
           </label>
-          <input
-            type="text"
-            id="targetAddress"
-            name="targetAddress"
-            value={formData.targetAddress}
-            onChange={handleInputChange}
-            placeholder="Enter wallet address or handle"
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            disabled={isSubmitting}
-          />
+          
+          {/* Platform Selection Buttons */}
+          <div className="flex gap-2 mb-2">
+            <button
+              type="button"
+              onClick={() => handlePlatformChange('wallet')}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                selectedPlatform === 'wallet'
+                  ? 'bg-primary text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              Wallet
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePlatformChange('basenames')}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                selectedPlatform === 'basenames'
+                  ? 'bg-primary text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              Base Names
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePlatformChange('farcaster')}
+              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+                selectedPlatform === 'farcaster'
+                  ? 'bg-primary text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              Farcaster
+            </button>
+          </div>
+
+          <div className="flex gap-2">
+            <input
+              type="text"
+              id="targetAddress"
+              name="targetAddress"
+              value={formData.targetAddress}
+              onChange={handleInputChange}
+              placeholder={
+                selectedPlatform === 'wallet' ? 'Enter wallet address (0x...)' :
+                selectedPlatform === 'basenames' ? 'Enter Base Name (username.base.eth)' :
+                'Enter Farcaster handle (@username)'
+              }
+              className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              disabled={isSubmitting || isResolving}
+            />
+            <button
+              type="button"
+              onClick={resolveHandle}
+              disabled={!formData.targetAddress.trim() || isSubmitting || isResolving}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isResolving ? 'Resolving...' : 'Resolve'}
+            </button>
+          </div>
+
+
         </div>
 
         {/* Reason for Shame Input */}
@@ -348,10 +506,19 @@ export function SendWankr() {
         {/* Send Button */}
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || !resolvedAddress}
           className="w-full py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isSubmitting ? 'Preparing...' : getButtonText()}
+          {isSubmitting ? 'Preparing...' : !resolvedAddress ? 'Resolve Address First' : getButtonText()}
+        </button>
+
+        {/* Debug Button */}
+        <button
+          type="button"
+          onClick={debugLocalStorage}
+          className="w-full py-2 px-4 bg-muted text-muted-foreground text-sm rounded-md hover:bg-muted/80 transition-colors"
+        >
+          Debug localStorage
         </button>
       </form>
 

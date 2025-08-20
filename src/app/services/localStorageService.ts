@@ -18,6 +18,11 @@ export const localStorageService = {
         storedAt: Date.now()
       }
       localStorage.setItem(key, JSON.stringify(data))
+      console.log('💾 Stored transaction in localStorage:', { 
+        hash: transaction.hash?.slice(0, 10) + '...', 
+        message: transaction.message?.slice(0, 30) + '...',
+        amount: transaction.amount 
+      })
       
       // Cleanup old entries
       localStorageService.cleanup(config)
@@ -80,7 +85,13 @@ export const localStorageService = {
       }
       
       // Sort by timestamp (newest first)
-      return transactions.sort((a, b) => b.timestamp - a.timestamp)
+      const sortedTransactions = transactions.sort((a, b) => b.timestamp - a.timestamp)
+      console.log('🗄️ Retrieved from localStorage:', sortedTransactions.map(tx => ({ 
+        hash: tx.hash?.slice(0, 10) + '...', 
+        message: tx.message?.slice(0, 30) + '...',
+        amount: tx.amount 
+      })))
+      return sortedTransactions
     } catch (error) {
       console.error('Failed to get all transactions:', error)
       return []
@@ -158,5 +169,38 @@ export const localStorageService = {
   getUncorrelatedTransactions: (config: Partial<LocalStorageConfig> = {}) => {
     const allTransactions = localStorageService.getAllTransactions(config)
     return allTransactions.filter(tx => !tx.isCorrelated)
+  },
+
+  clearAllTransactions: () => {
+    try {
+      const keys = Object.keys(localStorage)
+      const transactionKeys = keys.filter(key => key.startsWith(DEFAULT_CONFIG.prefix))
+      transactionKeys.forEach(key => localStorage.removeItem(key))
+      console.log(`🗑️ Cleared ${transactionKeys.length} transaction entries from localStorage`)
+    } catch (error) {
+      console.error('Error clearing all transactions:', error)
+    }
+  },
+
+  /**
+   * Clean up transactions that are missing proper hashes
+   */
+  cleanupInvalidTransactions(): void {
+    try {
+      const transactions = this.getAllTransactions()
+      const validTransactions = transactions.filter(tx => 
+        tx.hash && 
+        !tx.hash.startsWith('blockchain-') && 
+        tx.hash.length >= 10 // Basic validation for real transaction hashes
+      )
+      
+      if (validTransactions.length !== transactions.length) {
+        console.log(`🧹 Cleaned up ${transactions.length - validTransactions.length} invalid transactions`)
+        this.clearAllTransactions()
+        validTransactions.forEach(tx => this.storeTransaction(tx))
+      }
+    } catch (error) {
+      console.error('Error cleaning up invalid transactions:', error)
+    }
   }
 }

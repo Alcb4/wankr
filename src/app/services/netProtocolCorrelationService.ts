@@ -52,7 +52,7 @@ export const netProtocolCorrelationService = {
         return (
           messageData.from?.toLowerCase() === transaction.from.toLowerCase() &&
           messageData.to?.toLowerCase() === transaction.to.toLowerCase() &&
-          Math.abs(message.timestamp - transaction.timestamp) < 600000 // Within 10 minutes
+          Math.abs(message.timestamp - transaction.timestamp) < 1200000 // Within 20 minutes
         )
       })
       

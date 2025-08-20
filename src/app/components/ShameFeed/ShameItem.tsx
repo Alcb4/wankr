@@ -9,13 +9,22 @@ interface ShameItemProps {
 }
 
 export function ShameItem({ shame, isNew = false }: ShameItemProps) {
+  // Debug logging for message display
+  if (shame.message) {
+    console.log('📝 ShameItem received message:', { 
+      hash: shame.hash?.slice(0, 10) + '...', 
+      message: shame.message,
+      amount: shame.amount 
+    })
+  }
+  
   const fromDisplay = shame.fromDisplayName || shortenAddress(shame.from)
   const toDisplay = shame.toDisplayName || shortenAddress(shame.to)
   const timeAgo = getTimeAgo(shame.timestamp)
   const judgmentHTML = shame.judgment ? `${shame.judgment}/10` : ''
   const amount = formatWankr(shame.amount.toString())
   
-  const transactionLink = shame.hash ? 
+  const transactionLink = shame.hash && !shame.hash.startsWith('blockchain-') ? 
     `https://basescan.org/tx/${shame.hash}` : ''
 
   return (

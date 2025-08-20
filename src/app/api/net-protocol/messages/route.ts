@@ -5,6 +5,7 @@ import { ethers } from 'ethers'
 const NET_CONTRACT_ADDRESS = '0x00000000B24D62781dB359b07880a105cD0b64e6'
 const NET_CONTRACT_ABI = [
   'function getMessageForAppTopic(address app, string topic) view returns (uint256[])',
+  'function getMessagesByTopic(string topic, uint256 limit) view returns (uint256[])',
   'function getMessage(uint256 messageId) view returns (tuple(address sender, string text, string topic, bytes data, uint256 timestamp))'
 ]
 
@@ -36,8 +37,10 @@ export async function GET(request: NextRequest) {
     const netContract = new ethers.Contract(NET_CONTRACT_ADDRESS, NET_CONTRACT_ABI, provider)
 
     try {
-      // Get message IDs for the topic
-      const messageIds = await netContract.getMessageForAppTopic(ethers.ZeroAddress, topic)
+      // Get message IDs for the topic - we need to get messages for all apps
+      // Since we don't know which app sent the message, we'll try a different approach
+      // Let's use getMessagesByTopic instead, which gets messages by topic regardless of app
+      const messageIds = await netContract.getMessagesByTopic(topic, 100) // Get last 100 messages
       console.log(`📨 Found ${messageIds.length} messages for topic '${topic}'`)
 
       const messages = []

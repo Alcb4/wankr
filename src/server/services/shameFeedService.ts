@@ -167,7 +167,7 @@ export class ShameFeedService extends EventEmitter {
       
       // Get recent transfer events
       const currentBlock = await this.provider.getBlockNumber();
-      const fromBlock = currentBlock - 300; // Look back ~10 minutes (300 blocks) to reduce block counts
+      const fromBlock = currentBlock - 600; // Look back ~20 minutes (600 blocks) to reduce block counts
       
       console.log('📦 Fetching logs from blocks', { fromBlock, currentBlock });
       
@@ -242,7 +242,13 @@ export class ShameFeedService extends EventEmitter {
         const roundedAmount = Math.round(rawAmount);
         
         // Try to find matching Net Protocol message
+        console.log(`🔍 Looking for Net Protocol message for tx ${log.transactionHash}:`, { from, to, amount: roundedAmount });
         const matchingNetMessage = await this.findMatchingNetMessage(log.transactionHash, from, to, roundedAmount);
+        if (matchingNetMessage) {
+          console.log(`✅ Found Net Protocol message: ${matchingNetMessage.reason}`);
+        } else {
+          console.log(`❌ No Net Protocol message found for tx ${log.transactionHash}`);
+        }
         
         return {
           from,
@@ -250,7 +256,7 @@ export class ShameFeedService extends EventEmitter {
           amount: roundedAmount.toString(), // Use rounded amount for display
           timestamp: log.blockNumber ? Math.floor(Date.now() / 1000) : Math.floor(Date.now() / 1000), // Will be updated with actual block timestamp
           reason: matchingNetMessage?.reason || '',
-          transactionHash: log.transactionHash,
+          transactionHash: log.transactionHash || `blockchain-${from}-${to}-${log.blockNumber}`, // Ensure we always have a hash
           blockNumber: log.blockNumber,
           fromDisplayName: this.shortenAddress(from),
           toDisplayName: this.shortenAddress(to),
@@ -713,48 +719,61 @@ export class ShameFeedService extends EventEmitter {
     try {
       // Create Net Protocol contract instance
       const netContract = new ethers.Contract('0x00000000b24d62781db359b07880a105cd0b64e6', [
-        'function getMessageForAppTopic(address app, string topic) external view returns (uint256[] messageIds)',
-        'function getMessage(uint256 messageId) external view returns (string text, string topic, bytes data, uint256 timestamp)'
+        'function getTotalMessagesCount() external view returns (uint256)',
+        'function getMessagesInRange(uint256 startIndex, uint256 endIndex) external view returns (tuple(address sender, address app, uint256 timestamp, bytes data, string text, string topic)[])'
       ], this.provider);
       
-      // Get recent messages for the 'wankr-shame' topic
-      // Using zero address as app for now (we might need to use our app address later)
-      const messageIds = await netContract.getMessageForAppTopic(ethers.ZeroAddress, 'wankr-shame');
+      // Get the total message count to find the most recent messages
+      const totalMessages = await netContract.getTotalMessagesCount();
+      console.log(`📊 Total Net Protocol messages: ${totalMessages}`);
       
-      // Check the last few messages for a match
-      for (let i = Math.max(0, messageIds.length - 10); i < messageIds.length; i++) {
-        try {
-          const messageId = messageIds[i];
-          const message = await netContract.getMessage(messageId);
+      // Get the last 20 messages (or fewer if total is less than 20)
+      const startIndex = Math.max(0, Number(totalMessages) - 20);
+      const endIndex = Number(totalMessages) - 1;
+      
+      console.log(`🔍 Fetching messages ${startIndex} to ${endIndex} for app ${from}`);
+      
+      const messages = await netContract.getMessagesInRange(startIndex, endIndex);
+      console.log(`📨 Retrieved ${messages.length} messages from range`);
+      
+      // Look for wankr-shame messages from our app
+      for (const message of messages) {
+        const [sender, app, timestamp, data, text, topic] = message;
+        
+        // Check if this is a wankr-shame message from our app
+        if (topic === 'wankr-shame' && app.toLowerCase() === from.toLowerCase()) {
+          console.log(`🔍 Found wankr-shame message from ${app}:`, text);
           
-          // Try to parse the message data
-          const messageText = message[0];
-          const messageData = message[2];
-          
-          // Check if this message mentions our transaction or addresses
-          if (messageText.includes(from.toLowerCase()) && 
-              messageText.includes(to.toLowerCase()) && 
-              messageText.includes(amount.toString())) {
+          // Check if this message mentions our transaction addresses
+          if (text.includes(from.toLowerCase()) && 
+              text.includes(to.toLowerCase()) && 
+              text.includes(amount.toString())) {
             
-            // Try to extract reason from message data if it's JSON
-            try {
-              const dataString = ethers.toUtf8String(messageData);
-              const parsedData = JSON.parse(dataString);
-              if (parsedData.reason) {
-                console.log('🔗 Found matching Net Protocol message:', parsedData.reason);
-                return { reason: parsedData.reason };
+            // Also check if the message timestamp is recent (within last 30 minutes)
+            const messageTimestamp = Number(timestamp) * 1000; // Convert to milliseconds
+            const transactionTime = Date.now();
+            const timeDifference = Math.abs(messageTimestamp - transactionTime);
+            
+            if (timeDifference < 30 * 60 * 1000) { // Within 30 minutes
+              
+              // Try to extract reason from message data if it's JSON
+              try {
+                const dataString = ethers.toUtf8String(data);
+                const parsedData = JSON.parse(dataString);
+                if (parsedData.reason) {
+                  console.log(`🔗 Found matching Net Protocol message:`, parsedData.reason);
+                  return { reason: parsedData.reason };
+                }
+              } catch (_parseError) {
+                // If not JSON, try to extract reason from message text
+                const reasonMatch = text.match(/reason:\s*"([^"]+)"/);
+                if (reasonMatch && reasonMatch[1]) {
+                  console.log(`🔗 Found matching Net Protocol message:`, reasonMatch[1]);
+                  return { reason: reasonMatch[1] };
+                }
               }
-                    } catch (_parseError) {
-          // If not JSON, try to extract reason from message text
-          const reasonMatch = messageText.match(/reason:\s*"([^"]+)"/);
-          if (reasonMatch && reasonMatch[1]) {
-            console.log('🔗 Found matching Net Protocol message:', reasonMatch[1]);
-            return { reason: reasonMatch[1] };
+            }
           }
-        }
-          }
-        } catch (msgError) {
-          console.log('⚠️ Could not fetch message:', msgError);
         }
       }
     } catch (_error) {

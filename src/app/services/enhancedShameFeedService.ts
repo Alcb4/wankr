@@ -45,8 +45,16 @@ export const enhancedShameFeedService = {
   // Get shame feed data (hybrid approach)
   getShameFeed: async (): Promise<ShameFeedData> => {
     try {
+      // Clean up any invalid transactions first
+      localStorageService.cleanupInvalidTransactions()
+      
       // Get all local transactions
       const localTransactions = localStorageService.getAllTransactions()
+      console.log('📦 Local transactions:', localTransactions.map(tx => ({ 
+        hash: tx.hash?.slice(0, 10) + '...', 
+        message: tx.message?.slice(0, 30) + '...',
+        amount: tx.amount 
+      })))
       
       // Get blockchain transactions from the server
       const response = await fetch('/api/shame-feed')
@@ -55,7 +63,7 @@ export const enhancedShameFeedService = {
       if (response.ok) {
         const data = await response.json()
         blockchainTransactions = data.shameHistory.map((tx: { transactionHash?: string; from: string; to: string; amount: string; reason?: string; timestamp: number; blockNumber?: number; fromDisplayName?: string; toDisplayName?: string; judgment?: string; fromSource?: string; toSource?: string }) => ({
-          hash: tx.transactionHash || '',
+          hash: tx.transactionHash || `blockchain-${tx.from}-${tx.to}-${tx.blockNumber || tx.timestamp}`, // Fallback hash for blockchain transactions
           from: tx.from,
           to: tx.to,
           amount: parseFloat(tx.amount),
@@ -72,18 +80,35 @@ export const enhancedShameFeedService = {
         }))
       }
       
-      // Combine and deduplicate transactions (local takes precedence)
+      // Combine and deduplicate transactions (merge local and blockchain data)
       const combinedTransactions = [...localTransactions]
       
       blockchainTransactions.forEach(blockchainTx => {
-        const exists = combinedTransactions.some(localTx => localTx.hash === blockchainTx.hash)
-        if (!exists) {
+        const existingIndex = combinedTransactions.findIndex(localTx => localTx.hash === blockchainTx.hash)
+        if (existingIndex === -1) {
+          // New transaction from blockchain
           combinedTransactions.push(blockchainTx)
+        } else {
+          // Merge data: keep local message, add blockchain data
+          const localTx = combinedTransactions[existingIndex]
+          combinedTransactions[existingIndex] = {
+            ...blockchainTx,
+            message: localTx.message || blockchainTx.message, // Prefer local message
+            isCorrelated: localTx.isCorrelated,
+            netProtocolMessageId: localTx.netProtocolMessageId
+          }
         }
       })
       
       // Sort by timestamp (newest first)
       combinedTransactions.sort((a, b) => b.timestamp - a.timestamp)
+      
+      console.log('🔗 Combined transactions:', combinedTransactions.map(tx => ({ 
+        hash: tx.hash?.slice(0, 10) + '...', 
+        message: tx.message?.slice(0, 30) + '...',
+        amount: tx.amount,
+        source: tx.message ? 'local' : 'blockchain'
+      })))
       
       // Get uncorrelated transactions for background correlation
       const uncorrelated = localStorageService.getUncorrelatedTransactions()
