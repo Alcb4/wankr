@@ -1,15 +1,90 @@
 import type { AddressResolution } from './addressResolutionService'
 
 export class AddressResolutionFarcaster {
+  constructor() {
+    // API calls will be made through our own API route
+  }
+
   /**
-   * Resolve Farcaster handle to address
-   * TODO: Implement with Neynar API
+   * Resolve Farcaster handle to address using our API route
    */
-  async resolveFarcasterHandle(_handle: string): Promise<AddressResolution> {
-    // TODO: Implement Farcaster handle resolution
-    // This will use the Neynar API to resolve Farcaster handles to addresses
+  async resolveFarcasterHandle(handle: string): Promise<AddressResolution> {
+    const cleanHandle = handle.replace(/^@/, '')
     
-    throw new Error('Farcaster handle resolution not yet implemented')
+    if (!this.isValidFarcasterHandle(cleanHandle)) {
+      throw new Error(`Invalid Farcaster handle format: ${handle}`)
+    }
+
+    try {
+      const response = await fetch(`/api/resolve-farcaster-handle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ handle: cleanHandle })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      return {
+        address: data.address.toLowerCase() as `0x${string}`,
+        displayName: `@${data.username}`,
+        source: 'farcaster',
+        verified: true,
+        lastUpdated: Date.now()
+      }
+
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error(`Failed to resolve Farcaster handle: ${handle}`)
+    }
+  }
+
+  /**
+   * Resolve multiple Farcaster handles in parallel
+   */
+  async resolveFarcasterHandlesBulk(handles: string[]): Promise<AddressResolution[]> {
+    const cleanHandles = handles.map(h => h.replace(/^@/, ''))
+    const validHandles = cleanHandles.filter(h => this.isValidFarcasterHandle(h))
+    
+    if (validHandles.length === 0) {
+      return []
+    }
+
+    try {
+      const response = await fetch(`/api/resolve-farcaster-handle`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ handles: validHandles })
+      })
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      return (data.results || []).map((result: { address?: string; username?: string }) => ({
+        address: result.address?.toLowerCase() as `0x${string}`,
+        displayName: `@${result.username}`,
+        source: 'farcaster',
+        verified: true,
+        lastUpdated: Date.now()
+      })).filter((result: AddressResolution) => result.address)
+
+    } catch (error) {
+      console.error('Bulk Farcaster resolution failed:', error)
+      return []
+    }
   }
 
   /**

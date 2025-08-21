@@ -68,7 +68,7 @@ export const components = {
   // Button Variants
   button: {
     primary: 'bg-gradient-cta text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105',
-    secondary: 'bg-muted border border-border text-muted-foreground px-6 py-3 rounded-xl font-semibold hover:bg-muted/80 transition-all duration-300',
+    secondary: 'border border-white text-white px-6 py-3 rounded-xl font-semibold hover:bg-muted/80 transition-all duration-300',
     outline: 'border border-cyber text-cyber px-6 py-3 rounded-xl font-semibold hover:bg-cyber hover:text-white transition-all duration-300',
     danger: 'bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-semibold hover:bg-destructive/90 transition-all duration-300',
     disabled: 'opacity-60 cursor-not-allowed hover:scale-100',
@@ -82,9 +82,9 @@ export const components = {
   
   // Card Variants
   card: {
-    base: 'bg-card border border-border rounded-2xl backdrop-blur-md transition-all duration-300',
-    hover: 'hover:shadow-lg hover:bg-card/80',
-    interactive: 'hover:shadow-lg hover:bg-card/80 cursor-pointer',
+    base: 'glass-card border border-border rounded-2xl transition-all duration-300',
+    hover: 'hover:shadow-lg hover:glass-muted',
+    interactive: 'hover:shadow-lg hover:glass-muted cursor-pointer',
   },
   
   // Table Variants

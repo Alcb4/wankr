@@ -33,7 +33,7 @@ export class HandleResolutionService {
   constructor(checkRegisterService?: CheckRegisterService, registerService?: RegisterService) {
     this.registerService = registerService || new RegisterService();
     this.checkRegisterService = checkRegisterService || new CheckRegisterService(this.registerService);
-    this.fidResolver = new HandleResolutionFID();
+    this.fidResolver = new HandleResolutionFID(this.checkRegisterService);
     this.basenamesResolver = new HandleResolutionBasenames();
     
     // Listen to FID resolution events
@@ -139,8 +139,19 @@ export class HandleResolutionService {
     const cached = this.cache.get(normalizedAddress);
     if (cached && cached.source !== 'shortened') {
       // We already have a good resolution, don't queue for processing
+      console.log(`⏭️  Skipping background processing for ${address}: already in cache (${cached.source})`);
       return;
     }
+    
+    // Check register to avoid unnecessary background processing
+    const registerEntry = this.checkRegisterService.checkRegister(normalizedAddress);
+    if (registerEntry && registerEntry.source !== 'shortened') {
+      // We have a good resolution in register, don't queue for processing
+      console.log(`⏭️  Skipping background processing for ${address}: found in register (${registerEntry.source})`);
+      return;
+    }
+    
+    console.log(`🔄 Queuing ${address} for background processing (not in cache or register)`);
     
     // Queue for Basenames processing (non-blocking)
     this.queueBasenamesProcessing(address);
@@ -156,6 +167,20 @@ export class HandleResolutionService {
     // Process in background without blocking
     setImmediate(async () => {
       try {
+        const normalizedAddress = address.toLowerCase();
+        
+        // Check register first to avoid unnecessary API calls
+        const registerEntry = this.checkRegisterService.checkRegister(normalizedAddress);
+        if (registerEntry && registerEntry.source === 'basenames') {
+          const resolution = this.registerEntryToHandleResolution(registerEntry);
+          this.updateCacheAndRegisterIfBetter(address, resolution);
+          console.log(`🎯 Using registered Base Name for ${address}: ${resolution.displayName}`);
+          return;
+        }
+        
+        console.log(`🔍 Calling Base Names API for ${address} (not in register)`);
+        
+        // Only call the API if not found in register
         const basenamesResult = await this.basenamesResolver.resolveBasename(address);
         if (basenamesResult) {
           const resolution: HandleResolution = {

@@ -36,14 +36,14 @@ export default function Home() {
         
         {/* Mobile-first grid layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-4 lg:mb-6">
-          <BoxContainer padding="lg" minHeight="400px">
+          <BoxContainer minHeight="400px">
             <SectionTitle>Live Shame Feed</SectionTitle>
             <ErrorBoundary>
               <ShameFeed />
             </ErrorBoundary>
           </BoxContainer>
           
-          <BoxContainer padding="lg" minHeight="400px">
+          <BoxContainer minHeight="400px">
             <SectionTitle>Send Shame</SectionTitle>
             <ErrorBoundary>
               <SendWankr />
@@ -51,7 +51,7 @@ export default function Home() {
           </BoxContainer>
         </div>
         
-        <BoxContainer padding="lg" minHeight="400px" style={{ width: '100%' }}>
+        <BoxContainer minHeight="400px">
           <SectionTitle>Top $WANKR&apos;s</SectionTitle>
           <ErrorBoundary>
             <Leaderboard />

@@ -738,42 +738,47 @@ export class ShameFeedService extends EventEmitter {
       
       // Look for wankr-shame messages from our app
       for (const message of messages) {
-        const [sender, app, timestamp, data, text, topic] = message;
-        
-        // Check if this is a wankr-shame message from our app
-        if (topic === 'wankr-shame' && app.toLowerCase() === from.toLowerCase()) {
-          console.log(`🔍 Found wankr-shame message from ${app}:`, text);
+        try {
+          const [sender, app, timestamp, data, text, topic] = message;
           
-          // Check if this message mentions our transaction addresses
-          if (text.includes(from.toLowerCase()) && 
-              text.includes(to.toLowerCase()) && 
-              text.includes(amount.toString())) {
+                    // Safely check if topic is a valid string before comparison
+          if (typeof topic === 'string' && topic === 'wankr-shame' && app.toLowerCase() === from.toLowerCase()) {
+            console.log(`🔍 Found wankr-shame message from ${app}:`, text);
             
-            // Also check if the message timestamp is recent (within last 30 minutes)
-            const messageTimestamp = Number(timestamp) * 1000; // Convert to milliseconds
-            const transactionTime = Date.now();
-            const timeDifference = Math.abs(messageTimestamp - transactionTime);
-            
-            if (timeDifference < 30 * 60 * 1000) { // Within 30 minutes
+            // Check if this message mentions our transaction addresses
+            if (text.includes(from.toLowerCase()) && 
+                text.includes(to.toLowerCase()) && 
+                text.includes(amount.toString())) {
               
-              // Try to extract reason from message data if it's JSON
-              try {
-                const dataString = ethers.toUtf8String(data);
-                const parsedData = JSON.parse(dataString);
-                if (parsedData.reason) {
-                  console.log(`🔗 Found matching Net Protocol message:`, parsedData.reason);
-                  return { reason: parsedData.reason };
-                }
-              } catch (_parseError) {
-                // If not JSON, try to extract reason from message text
-                const reasonMatch = text.match(/reason:\s*"([^"]+)"/);
-                if (reasonMatch && reasonMatch[1]) {
-                  console.log(`🔗 Found matching Net Protocol message:`, reasonMatch[1]);
-                  return { reason: reasonMatch[1] };
+              // Also check if the message timestamp is recent (within last 30 minutes)
+              const messageTimestamp = Number(timestamp) * 1000; // Convert to milliseconds
+              const transactionTime = Date.now();
+              const timeDifference = Math.abs(messageTimestamp - transactionTime);
+              
+              if (timeDifference < 30 * 60 * 1000) { // Within 30 minutes
+                
+                // Try to extract reason from message data if it's JSON
+                try {
+                  const dataString = ethers.toUtf8String(data);
+                  const parsedData = JSON.parse(dataString);
+                  if (parsedData.reason) {
+                    console.log(`🔗 Found matching Net Protocol message:`, parsedData.reason);
+                    return { reason: parsedData.reason };
+                  }
+                } catch (_parseError) {
+                  // If not JSON, try to extract reason from message text
+                  const reasonMatch = text.match(/reason:\s*"([^"]+)"/);
+                  if (reasonMatch && reasonMatch[1]) {
+                    console.log(`🔗 Found matching Net Protocol message:`, reasonMatch[1]);
+                    return { reason: reasonMatch[1] };
+                  }
                 }
               }
             }
           }
+        } catch (messageError) {
+          // Skip messages that can't be decoded properly
+          console.log(`⚠️ Skipping malformed message in Net Protocol data`);
         }
       }
     } catch (_error) {
@@ -814,15 +819,17 @@ export class ShameFeedService extends EventEmitter {
       // Emit an event to update the UI with the resolved handle
       this.emit('handleResolutionUpdate', transaction);
       
-      // Also notify the client-side service
+      // Also notify the client-side service (optional - don't fail if this doesn't work)
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/handle-resolution-update`, {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        await fetch(`${baseUrl}/api/handle-resolution-update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ transaction })
         })
       } catch (error) {
-        console.error('Failed to notify client of handle resolution update:', error)
+        // Silently ignore this error - it's not critical
+        console.log('Note: Client notification skipped (this is normal in some environments)')
       }
       
     } catch (_error) {
@@ -834,15 +841,17 @@ export class ShameFeedService extends EventEmitter {
       transaction.toSource = 'shortened';
       this.emit('handleResolutionUpdate', transaction);
       
-      // Also notify the client-side service
+      // Also notify the client-side service (optional - don't fail if this doesn't work)
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/handle-resolution-update`, {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        await fetch(`${baseUrl}/api/handle-resolution-update`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ transaction })
         })
       } catch (error) {
-        console.error('Failed to notify client of handle resolution update:', error)
+        // Silently ignore this error - it's not critical
+        console.log('Note: Client notification skipped (this is normal in some environments)')
       }
     }
   }

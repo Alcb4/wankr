@@ -1,4 +1,4 @@
-import { DuneService } from './duneService';
+import { DuneService, DuneRawEntry } from './duneService';
 import { HandleResolutionService, HandleResolution } from './handleResolutionService';
 
 export interface LeaderboardEntry {
@@ -18,45 +18,27 @@ export interface LeaderboardData {
 
 export class LeaderboardService {
   private duneService: DuneService;
+  private handleResolver: HandleResolutionService;
   
   constructor(handleResolver?: HandleResolutionService) {
-    this.duneService = new DuneService(handleResolver);
+    this.duneService = new DuneService();
+    this.handleResolver = handleResolver || new HandleResolutionService();
   }
 
   /**
    * Get shame received leaderboard
    */
   async getShameReceivedLeaderboard(_period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardEntry[]> {
-    try {
-      // Use Dune service instead of blockchain polling
-      const duneData = await this.duneService.getShameReceivedLeaderboard();
-      
-      // For now, ignore period filtering since Dune queries don't support it yet
-      // TODO: Add time period support to Dune queries when needed
-      
-      return duneData;
-    } catch (error) {
-      console.error('Error getting shame received leaderboard:', error);
-      return [];
-    }
+    const data = await this.getLeaderboards(_period);
+    return data.received;
   }
 
   /**
    * Get shame soldiers leaderboard (senders)
    */
   async getShameSoldiersLeaderboard(_period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardEntry[]> {
-    try {
-      // Use Dune service instead of blockchain polling
-      const duneData = await this.duneService.getShameSoldiersLeaderboard();
-      
-      // For now, ignore period filtering since Dune queries don't support it yet
-      // TODO: Add time period support to Dune queries when needed
-      
-      return duneData;
-    } catch (error) {
-      console.error('Error getting shame soldiers leaderboard:', error);
-      return [];
-    }
+    const data = await this.getLeaderboards(_period);
+    return data.sent;
   }
 
   /**
@@ -64,16 +46,54 @@ export class LeaderboardService {
    */
   async getLeaderboards(_period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardData> {
     try {
-      // Use Dune service instead of blockchain polling
-      const duneData = await this.duneService.getLeaderboards();
+      console.log('🏆 Starting leaderboard generation...');
       
-      // For now, ignore period filtering since Dune queries don't support it yet
-      // TODO: Add time period support to Dune queries when needed
+      // Get raw data from Dune (no handle resolution)
+      const rawData = await this.duneService.getRawLeaderboards();
+      console.log(`📊 Got raw data: ${rawData.received.length} received, ${rawData.sent.length} sent`);
       
-      return duneData;
+      // Extract all unique addresses
+      const allAddresses = new Set<string>();
+      rawData.received.forEach(entry => allAddresses.add(entry.address));
+      rawData.sent.forEach(entry => allAddresses.add(entry.address));
+      
+      console.log(`📋 Resolving ${allAddresses.size} unique addresses...`);
+      
+      // Bulk resolve all addresses at once
+      const resolutions = await this.handleResolver.resolveHandlesBulk(Array.from(allAddresses));
+      console.log(`✅ Resolved ${Object.keys(resolutions).length} addresses`);
+      
+      // Convert raw entries to leaderboard entries with resolved names
+      const received = rawData.received.map(entry => this.rawToLeaderboardEntry(entry, resolutions, 'all'));
+      const sent = rawData.sent.map(entry => this.rawToLeaderboardEntry(entry, resolutions, 'all'));
+      
+      console.log(`🏆 Generated leaderboards: ${received.length} received, ${sent.length} sent`);
+      
+      return { received, sent };
     } catch (error) {
       console.error('Error getting leaderboards:', error);
       return { received: [], sent: [] };
     }
+  }
+  
+  /**
+   * Convert raw Dune entry to leaderboard entry with handle resolution
+   */
+  private rawToLeaderboardEntry(
+    raw: DuneRawEntry, 
+    resolutions: { [address: string]: HandleResolution },
+    period: 'all' | 'week' | 'day'
+  ): LeaderboardEntry {
+    const resolution = resolutions[raw.address];
+    
+    return {
+      rank: raw.rank,
+      address: raw.address,
+      displayName: resolution?.displayName || `${raw.address.slice(0, 6)}...${raw.address.slice(-4)}`,
+      transactionCount: raw.transactionCount,
+      totalWankr: raw.totalWankr,
+      period,
+      source: resolution?.source || 'shortened'
+    };
   }
 }

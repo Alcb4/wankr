@@ -3,6 +3,8 @@
 
 import { NeynarAPIClient, Configuration } from '@neynar/nodejs-sdk';
 import { EventEmitter } from 'events';
+import { CheckRegisterService } from './checkRegister';
+import { RegisterService } from './register';
 
 export interface FIDHandleResolution {
   address: string;
@@ -25,9 +27,12 @@ export class HandleResolutionFID extends EventEmitter {
   private batchProcessingInterval: NodeJS.Timeout | null = null;
   private readonly BATCH_INTERVAL = 60000; // 1 minute
   private readonly MAX_BATCH_SIZE = 50; // Max addresses per batch
+  
+  private checkRegisterService: CheckRegisterService;
 
-  constructor() {
+  constructor(checkRegisterService?: CheckRegisterService) {
     super();
+    this.checkRegisterService = checkRegisterService || new CheckRegisterService(new RegisterService());
     this.initializeNeynarClient();
     this.startBatchProcessing();
   }
@@ -105,6 +110,25 @@ export class HandleResolutionFID extends EventEmitter {
   private async processAddressChunk(addresses: string[]): Promise<void> {
     if (!this.neynarClient) return;
 
+    // Filter out addresses that are already in the register
+    const addressesToProcess: string[] = [];
+    addresses.forEach(address => {
+      const normalizedAddress = address.toLowerCase();
+      const registerEntry = this.checkRegisterService.checkRegister(normalizedAddress);
+      if (!registerEntry || registerEntry.source !== 'farcaster') {
+        addressesToProcess.push(address);
+      } else {
+        console.log(`⏭️  Skipping Farcaster API call for ${address}: found in register (${registerEntry.source})`);
+      }
+    });
+
+    if (addressesToProcess.length === 0) {
+      console.log(`⏭️  All addresses already in register, skipping Farcaster API calls`);
+      return;
+    }
+
+    console.log(`🔍 Calling Farcaster API for ${addressesToProcess.length} addresses (not in register)`);
+
     try {
       // Rate limiting
       const now = Date.now();
@@ -118,11 +142,11 @@ export class HandleResolutionFID extends EventEmitter {
       
       // Make bulk API call
       const result = await this.neynarClient.fetchBulkUsersByEthOrSolAddress({
-        addresses: addresses
+        addresses: addressesToProcess
       });
 
       // Process results
-      addresses.forEach(address => {
+      addressesToProcess.forEach(address => {
         const normalizedAddress = address.toLowerCase();
         
         if (result && result[normalizedAddress] && result[normalizedAddress].length > 0) {
@@ -166,13 +190,13 @@ export class HandleResolutionFID extends EventEmitter {
         const status = (error as { response?: { status?: number } }).response?.status;
         if (status === 404) {
           // 404 is expected when addresses don't have Farcaster handles
-          console.log(`ℹ️  No Farcaster handles found for ${addresses.length} addresses (404)`);
+          console.log(`ℹ️  No Farcaster handles found for ${addressesToProcess.length} addresses (404)`);
         } else if (status === 429) {
           // Rate limiting - expected and handled by delays
           console.log(`⏳ Farcaster API rate limited, will retry later (429)`);
         } else {
           // Other HTTP errors
-          console.log(`⚠️  Farcaster API error (${status}): ${addresses.length} addresses`);
+          console.log(`⚠️  Farcaster API error (${status}): ${addressesToProcess.length} addresses`);
         }
       } else {
         // Non-HTTP errors
@@ -293,7 +317,17 @@ export class HandleResolutionFID extends EventEmitter {
    * Queue address for background processing
    */
   queueForProcessing(address: string): void {
-    this.addressQueue.add(address.toLowerCase());
+    const normalizedAddress = address.toLowerCase();
+    
+    // Check register first to avoid unnecessary queuing
+    const registerEntry = this.checkRegisterService.checkRegister(normalizedAddress);
+    if (registerEntry && registerEntry.source === 'farcaster') {
+      console.log(`⏭️  Skipping Farcaster queuing for ${address}: found in register (${registerEntry.source})`);
+      return;
+    }
+    
+    console.log(`🔄 Queuing ${address} for Farcaster processing (not in register)`);
+    this.addressQueue.add(normalizedAddress);
   }
 
   /**

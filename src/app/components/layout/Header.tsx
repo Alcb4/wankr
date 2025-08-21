@@ -32,7 +32,7 @@ export function Header() {
           className={`
             ${components.button.primary}
             hover:scale-105 transition-transform duration-200
-            w-full sm:w-auto text-center
+            px-6 py-3 min-w-[140px] text-center
           `}
         >
           Read Whitepaper
@@ -44,7 +44,7 @@ export function Header() {
           className={`
             ${components.button.secondary}
             hover:scale-105 transition-transform duration-200
-            w-full sm:w-auto text-center
+            px-6 py-3 min-w-[140px] text-center
           `}
         >
           BUY $WANKR

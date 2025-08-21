@@ -4,18 +4,20 @@ import { components } from '../../theme'
 interface BoxContainerProps {
   children: ReactNode
   minHeight?: string
-  padding?: string
   style?: CSSProperties
+  className?: string // Allow passing extra classes
 }
 
-export function BoxContainer({ children, minHeight = 'auto', padding = '2rem', style }: BoxContainerProps) {
+export function BoxContainer({ children, minHeight = 'auto', style, className = '' }: BoxContainerProps) {
+  // Combine the base classes with any extra classes passed in
+  const combinedClassName = `${components.card.base} ${components.card.hover} p-4 sm:p-6 ${className}`;
+
   return (
     <div 
-      className={components.card.base + ' ' + components.card.hover + ' p-4 sm:p-6'}
+      className={combinedClassName}
       style={{
-        padding: padding !== '2rem' ? padding : undefined, // Only override if custom padding is provided
         minHeight,
-        maxWidth: '100%',
+        width: '100%', // Ensure full width
         ...style
       }}
     >

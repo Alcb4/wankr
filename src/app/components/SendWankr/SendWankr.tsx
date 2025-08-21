@@ -353,7 +353,7 @@ export function SendWankr() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Target Address Input */}
         <div>
-          <label htmlFor="targetAddress" className="block text-sm font-medium text-muted-foreground mb-2">
+          <label htmlFor="targetAddress" className="block text-sm font-medium text-white mb-2">
             Target Address or Handle
           </label>
           
@@ -364,8 +364,8 @@ export function SendWankr() {
               onClick={() => handlePlatformChange('wallet')}
               className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
                 selectedPlatform === 'wallet'
-                  ? 'bg-primary text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-primary text-white shadow-lg'
+                  : 'text-muted-foreground hover:bg-muted/80 border border-black'
               }`}
             >
               Wallet
@@ -375,8 +375,8 @@ export function SendWankr() {
               onClick={() => handlePlatformChange('basenames')}
               className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
                 selectedPlatform === 'basenames'
-                  ? 'bg-primary text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-primary text-white shadow-lg'
+                  : 'text-muted-foreground hover:bg-muted/80 border border-black'
               }`}
             >
               Base Names
@@ -386,8 +386,8 @@ export function SendWankr() {
               onClick={() => handlePlatformChange('farcaster')}
               className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
                 selectedPlatform === 'farcaster'
-                  ? 'bg-primary text-white'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  ? 'bg-primary text-white shadow-lg'
+                  : 'text-muted-foreground hover:bg-muted/80 border border-black'
               }`}
             >
               Farcaster
@@ -424,7 +424,7 @@ export function SendWankr() {
 
         {/* Reason for Shame Input */}
         <div>
-          <label htmlFor="reason" className="block text-sm font-medium text-muted-foreground mb-2">
+          <label htmlFor="reason" className="block text-sm font-medium text-white mb-2">
             Reason for Shame
           </label>
           <textarea
@@ -442,7 +442,7 @@ export function SendWankr() {
         {/* Amount Display and Slider */}
         <div>
           <div className="flex justify-between items-center mb-2">
-            <label className="text-sm font-medium text-muted-foreground">
+            <label className="text-sm font-medium text-white">
               Amount
             </label>
             <span className="text-lg font-bold text-primary">
@@ -464,7 +464,7 @@ export function SendWankr() {
           />
           
           <div className="relative mt-1 mb-6">
-            <div className="absolute inset-x-0 flex text-xs text-muted-foreground">
+            <div className="absolute inset-x-0 flex text-xs text-white">
               <span style={{ position: 'absolute', left: '0%', transform: 'translateX(0%)' }}>1</span>
               <span style={{ position: 'absolute', left: '44.44%', transform: 'translateX(-50%)' }}>5</span>
               <span style={{ position: 'absolute', right: '0%', transform: 'translateX(0%)' }}>10</span>
@@ -478,8 +478,15 @@ export function SendWankr() {
           disabled={isSubmitting || !resolvedAddress}
           className="w-full py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {isSubmitting ? 'Preparing...' : !resolvedAddress ? 'Resolve Address First' : getButtonText()}
+          {isSubmitting ? 'Preparing...' : getButtonText()}
         </button>
+        
+        {/* Address Resolution Status */}
+        {!resolvedAddress && formData.targetAddress.trim() && (
+          <div className="text-sm text-muted-foreground text-center">
+            ⚠️ Please resolve the address before sending
+          </div>
+        )}
 
 
       </form>

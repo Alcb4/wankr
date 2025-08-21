@@ -87,7 +87,21 @@ export const enhancedShameFeedService = {
       const combinedTransactions = [...localTransactions]
       
       blockchainTransactions.forEach(blockchainTx => {
-        const existingIndex = combinedTransactions.findIndex(localTx => localTx.hash === blockchainTx.hash)
+        // More robust deduplication: check by hash first, then by signature (from, to, amount, timestamp)
+        const existingIndex = combinedTransactions.findIndex(localTx => {
+          // Primary check: exact hash match
+          if (localTx.hash === blockchainTx.hash && localTx.hash && !localTx.hash.startsWith('blockchain-')) {
+            return true
+          }
+          
+          // Secondary check: transaction signature match (for cases where hashes differ)
+          const timeDiff = Math.abs(localTx.timestamp - blockchainTx.timestamp)
+          return localTx.from.toLowerCase() === blockchainTx.from.toLowerCase() &&
+                 localTx.to.toLowerCase() === blockchainTx.to.toLowerCase() &&
+                 localTx.amount === blockchainTx.amount &&
+                 timeDiff < 60000 // Within 1 minute
+        })
+        
         if (existingIndex === -1) {
           // New transaction from blockchain
           combinedTransactions.push(blockchainTx)
@@ -98,7 +112,8 @@ export const enhancedShameFeedService = {
             ...blockchainTx,
             message: localTx.message || blockchainTx.message, // Prefer local message
             isCorrelated: localTx.isCorrelated,
-            netProtocolMessageId: localTx.netProtocolMessageId
+            netProtocolMessageId: localTx.netProtocolMessageId,
+            hash: blockchainTx.hash || localTx.hash // Use blockchain hash if available
           }
         }
       })
@@ -110,8 +125,13 @@ export const enhancedShameFeedService = {
         hash: tx.hash?.slice(0, 10) + '...', 
         message: tx.message?.slice(0, 30) + '...',
         amount: tx.amount,
+        from: tx.from.slice(0, 6) + '...',
+        to: tx.to.slice(0, 6) + '...',
+        timestamp: new Date(tx.timestamp).toLocaleTimeString(),
         source: tx.message ? 'local' : 'blockchain'
       })))
+      
+      console.log(`📊 Deduplication results: ${localTransactions.length} local + ${blockchainTransactions.length} blockchain = ${combinedTransactions.length} combined`)
       
       // Get uncorrelated transactions for background correlation
       const uncorrelated = localStorageService.getUncorrelatedTransactions()

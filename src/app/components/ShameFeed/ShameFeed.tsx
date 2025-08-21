@@ -28,7 +28,7 @@ export function ShameFeed() {
   if (loading) {
     return (
       <div className={layout.flex.center + ' py-8'}>
-        <div className={components.status.loading}></div>
+        <div className="inline-block w-8 h-8 border-4 border-muted border-t-primary rounded-full" style={{ animation: 'spin 1s linear infinite' }}></div>
         <p className="mt-4 text-muted-foreground">Loading shame feed...</p>
       </div>
     )
@@ -49,18 +49,18 @@ export function ShameFeed() {
     <div>
       {/* Stats and Live Status */}
       <Card variant="base" padding="sm" className="mb-4">
-        <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm">
-            <span className="text-muted-foreground">
+        <div className="flex flex-row justify-between items-center gap-3">
+          <div className="flex flex-row gap-4 text-sm overflow-x-auto">
+            <span className="text-white whitespace-nowrap">
               Total Transactions: <span className="text-secondary font-semibold">{stats.totalTransactions}</span>
             </span>
-            <span className="text-muted-foreground">
+            <span className="text-white whitespace-nowrap">
               Total Shame Delivered: <span className="text-secondary font-semibold">{stats.totalShameDelivered}</span>
             </span>
           </div>
 
           {/* Live Status */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-md border self-start sm:self-auto" style={{ 
+          <div className="flex items-center gap-2 px-3 py-1 rounded-md border flex-shrink-0" style={{ 
             backgroundColor: error ? 'rgba(255, 71, 87, 0.1)' : 'rgba(46, 213, 115, 0.1)', 
             borderColor: error ? '#ff4757' : '#2ed573' 
           }}>

@@ -44,12 +44,12 @@ export function formatWankr(amount: string): string {
 export function getWankrAmountComment(amount: string): string {
   const numAmount = parseFloat(amount)
   if (numAmount === 69) return '🚫'
-  if (numAmount === 1) return 'Baby Wankr'
-  if (numAmount === 2) return 'Little Wankr'
-  if (numAmount === 3) return 'Minor Wankr'
-  if (numAmount === 4) return 'Decent Wankr'
-  if (numAmount === 5) return 'Regular Wankr'
-  if (numAmount === 6) return 'Solid Wankr'
+  if (numAmount === 1) return 'Little Wankr'
+  if (numAmount === 2) return 'Minor Wankr'
+  if (numAmount === 3) return 'Decent Wankr'
+  if (numAmount === 4) return 'Regular Wankr'
+  if (numAmount === 5) return 'Solid Wankr'
+  if (numAmount === 6) return 'Big Wankr'
   if (numAmount === 7) return 'Major Wankr'
   if (numAmount === 8) return 'Massive Wankr'
   if (numAmount === 9) return 'Epic Wankr'
