@@ -38,7 +38,7 @@ export function ShameItem({ shame, isNew = false }: ShameItemProps) {
       {/* Main content - three-line layout */}
       <div className="flex flex-col gap-1">
         {/* Line 1: Transaction */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-baseline">
           <div className="text-sm text-muted-foreground flex items-center gap-3">
             <span className="text-primary font-semibold break-all">{fromDisplay}</span>
             <span className="text-secondary font-medium text-xs uppercase tracking-wider">shamed</span>
@@ -47,7 +47,7 @@ export function ShameItem({ shame, isNew = false }: ShameItemProps) {
               {getWankrAmountComment(shame.amount.toString())}
             </span>
           </div>
-          <div className="flex flex-col items-center justify-center">
+          <div className="flex flex-col items-start justify-start">
             <div className="text-2xl font-extrabold leading-none text-primary text-center">
               {amount}
             </div>
