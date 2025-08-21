@@ -47,10 +47,10 @@ export function ShameFeed() {
 
   return (
     <div>
-      {/* Stats and Live Status on same line */}
+      {/* Stats and Live Status */}
       <Card variant="base" padding="sm" className="mb-4">
-        <div className={layout.flex.between}>
-          <div className="flex gap-4 text-sm">
+        <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-sm">
             <span className="text-muted-foreground">
               Total Transactions: <span className="text-secondary font-semibold">{stats.totalTransactions}</span>
             </span>
@@ -60,7 +60,7 @@ export function ShameFeed() {
           </div>
 
           {/* Live Status */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-md border" style={{ 
+          <div className="flex items-center gap-2 px-3 py-1 rounded-md border self-start sm:self-auto" style={{ 
             backgroundColor: error ? 'rgba(255, 71, 87, 0.1)' : 'rgba(46, 213, 115, 0.1)', 
             borderColor: error ? '#ff4757' : '#2ed573' 
           }}>
