@@ -46,7 +46,7 @@ export class HandleResolutionService {
     return {
       address: entry.address,
       displayName: entry.displayName,
-      source: entry.source as 'farcaster' | 'shortened',
+      source: entry.source as 'farcaster' | 'basenames' | 'shortened',
       handle: entry.handle,
       platform: entry.platform,
       verified: entry.verified,
@@ -133,6 +133,15 @@ export class HandleResolutionService {
    * Queue address for background processing (non-blocking)
    */
   private queueForBackgroundProcessing(address: string): void {
+    const normalizedAddress = address.toLowerCase();
+    
+    // Check if we already have a good resolution in cache
+    const cached = this.cache.get(normalizedAddress);
+    if (cached && cached.source !== 'shortened') {
+      // We already have a good resolution, don't queue for processing
+      return;
+    }
+    
     // Queue for Basenames processing (non-blocking)
     this.queueBasenamesProcessing(address);
     
@@ -166,6 +175,65 @@ export class HandleResolutionService {
         console.error('Basenames processing error:', error);
       }
     });
+  }
+
+  /**
+   * Public method to resolve Base Names directly (for immediate resolution)
+   */
+  async resolveBasenameDirectly(address: string): Promise<HandleResolution | null> {
+    try {
+      const basenamesResult = await this.basenamesResolver.resolveBasename(address);
+      if (basenamesResult) {
+        return {
+          address: address,
+          displayName: basenamesResult.displayName,
+          source: 'basenames',
+          handle: basenamesResult.handle,
+          platform: 'basenames',
+          verified: basenamesResult.verified,
+          lastUpdated: Date.now(),
+          priority: this.PRIORITY_ORDER.basenames
+        };
+      }
+    } catch (error) {
+      console.error('Direct Base Names resolution error:', error);
+    }
+    return null;
+  }
+
+  /**
+   * Optimized method for shame feed that checks cache first, then resolves directly
+   */
+  async resolveHandleForShameFeed(address: string): Promise<HandleResolution> {
+    const normalizedAddress = address.toLowerCase();
+    
+    // Check cache first
+    const cached = this.cache.get(normalizedAddress);
+    if (cached && cached.source === 'basenames') {
+      console.log(`🎯 Using cached Base Name for ${address}: ${cached.displayName}`);
+      return cached;
+    }
+    
+    // Check register
+    const registerEntry = this.checkRegisterService.checkRegister(normalizedAddress);
+    if (registerEntry && registerEntry.source === 'basenames') {
+      const resolution = this.registerEntryToHandleResolution(registerEntry);
+      this.cache.set(normalizedAddress, resolution);
+      console.log(`🎯 Using registered Base Name for ${address}: ${resolution.displayName}`);
+      return resolution;
+    }
+    
+    // Try direct Base Names resolution
+    const directResult = await this.resolveBasenameDirectly(address);
+    if (directResult) {
+      // Cache the result
+      this.cache.set(normalizedAddress, directResult);
+      console.log(`🎯 Found Base Name for ${address}: ${directResult.displayName}`);
+      return directResult;
+    }
+    
+    // Fall back to general resolution (which will use cache/register/shortened)
+    return this.resolveHandle(address);
   }
 
   /**

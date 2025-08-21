@@ -106,6 +106,79 @@ export class AddressResolutionService {
   }
 
   /**
+   * Bulk resolve handles by platform
+   */
+  async resolveHandlesBulk(handles: string[], platform: ResolutionPlatform): Promise<Map<string, AddressResolution>> {
+    const results = new Map<string, AddressResolution>()
+    
+    if (handles.length === 0) return results
+    
+    // Check cache first
+    const uncachedHandles: string[] = []
+    handles.forEach(handle => {
+      const cacheKey = `${platform}:${handle.toLowerCase()}`
+      const cached = this.cache.get(cacheKey)
+      if (cached && Date.now() - cached.lastUpdated < 300000) { // 5 minute cache
+        results.set(handle, cached)
+      } else {
+        uncachedHandles.push(handle)
+      }
+    })
+    
+    if (uncachedHandles.length === 0) {
+      return results
+    }
+    
+    console.log(`🔍 Bulk resolving ${uncachedHandles.length} handles for platform: ${platform}`)
+    
+    try {
+      let bulkResults: Map<string, AddressResolution>
+      
+      switch (platform) {
+        case 'basenames':
+          bulkResults = await this.basenamesResolver.resolveBasenamesBulk(uncachedHandles)
+          break
+        case 'farcaster':
+          // TODO: Implement bulk Farcaster resolution
+          bulkResults = new Map()
+          break
+        case 'x':
+          // TODO: Implement bulk X resolution
+          bulkResults = new Map()
+          break
+        case 'wallet':
+          // For wallet addresses, just validate them
+          bulkResults = new Map()
+          uncachedHandles.forEach(handle => {
+            try {
+              const resolution = this.resolveWalletAddress(handle)
+              bulkResults.set(handle, resolution)
+            } catch (error) {
+              console.error(`❌ Invalid wallet address: ${handle}`)
+            }
+          })
+          break
+        default:
+          throw new Error(`Unsupported platform for bulk resolution: ${platform}`)
+      }
+      
+      // Cache and return results
+      bulkResults.forEach((resolution, handle) => {
+        const cacheKey = `${platform}:${handle.toLowerCase()}`
+        this.cache.set(cacheKey, resolution)
+        results.set(handle, resolution)
+      })
+      
+      console.log(`✅ Bulk resolution completed: ${results.size}/${handles.length} successful`)
+      return results
+      
+    } catch (error) {
+      console.error('❌ Bulk resolution failed:', error)
+      return results
+    }
+  }
+
+  /**
    * Clear all cache
    */
   clearAllCache(): void {

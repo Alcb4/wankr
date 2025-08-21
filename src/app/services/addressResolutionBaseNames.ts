@@ -1,5 +1,6 @@
 import { getAddress } from '@coinbase/onchainkit/identity'
 import { base } from 'viem/chains'
+import { createPublicClient, http } from 'viem'
 import type { AddressResolution } from './addressResolutionService'
 
 export interface BaseNamesResolution {
@@ -12,6 +13,14 @@ export interface BaseNamesResolution {
 }
 
 export class AddressResolutionBaseNames {
+  private client = createPublicClient({
+    chain: base,
+    transport: http(),
+    batch: {
+      multicall: true,
+    },
+  })
+
   /**
    * Resolve Base Name to address
    */
@@ -42,7 +51,7 @@ export class AddressResolutionBaseNames {
       return {
         address: result.toLowerCase(),
         displayName: cleanHandle, // Show the clean handle without .base.eth
-        source: 'basenames',
+                        source: 'basenames' as const,
         handle: basename,
         platform: 'basenames',
         verified: true, // Base Names are on-chain verified
@@ -57,6 +66,73 @@ export class AddressResolutionBaseNames {
       }
       
       throw new Error(`Failed to resolve Base Name: ${handle}`)
+    }
+  }
+
+  /**
+   * Bulk resolve multiple Base Names using multicall
+   */
+  async resolveBasenamesBulk(handles: string[]): Promise<Map<string, AddressResolution>> {
+    const results = new Map<string, AddressResolution>()
+    
+    if (handles.length === 0) return results
+    
+    try {
+      console.log(`🔍 Bulk resolving ${handles.length} Base Names`)
+      
+      // Prepare handles for resolution
+      const basenames = handles.map(handle => {
+        const cleanHandle = handle.replace(/^@/, '')
+        return cleanHandle.endsWith('.base.eth') 
+          ? cleanHandle 
+          : `${cleanHandle}.base.eth`
+      })
+      
+      // Use multicall to batch the resolution requests
+      // Note: We'll need to implement this with the actual Base Name resolver contract
+      // For now, we'll use parallel resolution with OnchainKit
+      const resolutionPromises = basenames.map(async (basename, index) => {
+        try {
+          const result = await getAddress({ 
+            name: basename, 
+            chain: base 
+          })
+          
+          if (result) {
+            const cleanHandle = handles[index].replace(/^@/, '')
+            return {
+              handle: handles[index],
+              resolution: {
+                address: result.toLowerCase(),
+                displayName: cleanHandle,
+                                 source: 'basenames' as const,
+                handle: basename,
+                platform: 'basenames',
+                verified: true,
+                lastUpdated: Date.now()
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Failed to resolve ${basename}:`, error)
+        }
+        return null
+      })
+      
+      const resolved = await Promise.allSettled(resolutionPromises)
+      
+      resolved.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          results.set(result.value.handle, result.value.resolution)
+        }
+      })
+      
+      console.log(`✅ Bulk resolution completed: ${results.size}/${handles.length} successful`)
+      return results
+      
+    } catch (error) {
+      console.error('❌ Bulk Base Name resolution failed:', error)
+      return results
     }
   }
 

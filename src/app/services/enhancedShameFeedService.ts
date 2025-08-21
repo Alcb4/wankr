@@ -2,6 +2,9 @@ import { localStorageService } from './localStorageService'
 import { netProtocolCorrelationService } from './netProtocolCorrelationService'
 import type { ShameTransaction, ShameFeedData, ShameFeedStats } from '../types/shame-feed'
 
+// Event emitter for handle resolution updates
+const eventEmitter = new EventTarget()
+
 export const enhancedShameFeedService = {
   // Store transaction immediately after success
   storeTransactionSuccess: async (transactionData: {
@@ -192,6 +195,27 @@ export const enhancedShameFeedService = {
   getRecentTransactions: (hours: number = 24): ShameTransaction[] => {
     const cutoffTime = Date.now() - (hours * 60 * 60 * 1000)
     return localStorageService.getTransactionsInRange(cutoffTime, Date.now())
+  },
+
+  // Listen for handle resolution updates from server
+  listenForHandleUpdates: (callback: (transaction: ShameTransaction) => void) => {
+    const handleUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent
+      callback(customEvent.detail)
+    }
+    
+    eventEmitter.addEventListener('handleResolutionUpdate', handleUpdate)
+    
+    // Return cleanup function
+    return () => {
+      eventEmitter.removeEventListener('handleResolutionUpdate', handleUpdate)
+    }
+  },
+
+  // Emit handle resolution update (called by server)
+  emitHandleUpdate: (transaction: ShameTransaction) => {
+    const event = new CustomEvent('handleResolutionUpdate', { detail: transaction })
+    eventEmitter.dispatchEvent(event)
   },
 
   // Refresh shame feed (force correlation)

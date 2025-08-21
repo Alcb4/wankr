@@ -332,32 +332,7 @@ export function SendWankr() {
     }
   }
 
-  // Debug function to check localStorage
-  const debugLocalStorage = async () => {
-    console.log('🔍 Debug: Checking localStorage...')
-    
-    // Test basic localStorage functionality
-    try {
-      localStorage.setItem('test-key', 'test-value')
-      const testValue = localStorage.getItem('test-key')
-      console.log('🔍 Debug: localStorage test:', testValue === 'test-value' ? 'PASSED' : 'FAILED')
-      localStorage.removeItem('test-key')
-    } catch (error) {
-      console.error('🔍 Debug: localStorage test FAILED:', error)
-    }
-    
-    const { localStorageService } = await import('../../services/localStorageService')
-    const transactions = localStorageService.getAllTransactions()
-    console.log('🔍 Debug: localStorage transactions:', transactions)
-    
-    // Also check raw localStorage
-    const keys = Object.keys(localStorage).filter(key => key.startsWith('wankr-shame-'))
-    console.log('🔍 Debug: localStorage keys:', keys)
-    keys.forEach(key => {
-      const data = localStorage.getItem(key)
-      console.log(`🔍 Debug: ${key}:`, data ? JSON.parse(data) : null)
-    })
-  }
+
 
   // Test contract connection on mount only if wallet is connected
   useEffect(() => {
@@ -383,11 +358,11 @@ export function SendWankr() {
           </label>
           
           {/* Platform Selection Buttons */}
-          <div className="flex gap-2 mb-2">
+          <div className="flex gap-1 sm:gap-2 mb-2">
             <button
               type="button"
               onClick={() => handlePlatformChange('wallet')}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
                 selectedPlatform === 'wallet'
                   ? 'bg-primary text-white'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -398,7 +373,7 @@ export function SendWankr() {
             <button
               type="button"
               onClick={() => handlePlatformChange('basenames')}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
                 selectedPlatform === 'basenames'
                   ? 'bg-primary text-white'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -409,7 +384,7 @@ export function SendWankr() {
             <button
               type="button"
               onClick={() => handlePlatformChange('farcaster')}
-              className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${
+              className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
                 selectedPlatform === 'farcaster'
                   ? 'bg-primary text-white'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -419,7 +394,7 @@ export function SendWankr() {
             </button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
               id="targetAddress"
@@ -438,7 +413,7 @@ export function SendWankr() {
               type="button"
               onClick={resolveHandle}
               disabled={!formData.targetAddress.trim() || isSubmitting || isResolving}
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors sm:w-auto"
             >
               {isResolving ? 'Resolving...' : 'Resolve'}
             </button>
@@ -506,20 +481,13 @@ export function SendWankr() {
           {isSubmitting ? 'Preparing...' : !resolvedAddress ? 'Resolve Address First' : getButtonText()}
         </button>
 
-        {/* Debug Button */}
-        <button
-          type="button"
-          onClick={debugLocalStorage}
-          className="w-full py-2 px-4 bg-muted text-muted-foreground text-sm rounded-md hover:bg-muted/80 transition-colors"
-        >
-          Debug localStorage
-        </button>
+
       </form>
 
       {/* Transaction Modal with OnchainKit */}
       {showTransaction && transactionCalls.length > 0 && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-lg p-4 sm:p-6 max-w-md w-full">
             <h3 className="text-lg font-semibold mb-4">Confirm Transaction</h3>
             
             <div className="space-y-3 mb-6">
@@ -545,7 +513,7 @@ export function SendWankr() {
               </div>
             </div>
 
-            <div className="flex space-x-3">
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
               <button
                 onClick={() => {
                   setShowTransaction(false)

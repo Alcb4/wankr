@@ -6,12 +6,7 @@ interface MainContentProps {
 
 export function MainContent({ children }: MainContentProps) {
   return (
-    <div style={{
-      maxWidth: '1200px', // Reduced from 1400px
-      margin: '0 auto',
-      padding: '2rem',
-      marginRight: '200px' // Reduced from 280px to center better
-    }}>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {children}
     </div>
   )

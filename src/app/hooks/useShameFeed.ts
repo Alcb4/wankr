@@ -82,6 +82,24 @@ export function useShameFeed() {
     return () => window.removeEventListener('refreshShameFeed', handleRefresh)
   }, [loadData])
 
+  // Listen for handle resolution updates
+  useEffect(() => {
+    const cleanup = enhancedShameFeedService.listenForHandleUpdates((updatedTransaction) => {
+      console.log('🎯 useShameFeed: Received handle resolution update:', updatedTransaction)
+      
+      // Update the transaction in the current state
+      setTransactions(current => 
+        current.map(tx => 
+          tx.hash === updatedTransaction.hash 
+            ? { ...tx, ...updatedTransaction }
+            : tx
+        )
+      )
+    })
+
+    return cleanup
+  }, [])
+
   useEffect(() => {
     loadData()
     const interval = setInterval(loadData, 35000) // Refresh every 35 seconds

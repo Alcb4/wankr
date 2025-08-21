@@ -34,8 +34,8 @@ export default function Home() {
           <WalletConnect />
         </WalletSection>
         
-        {/* Reduced margin from mb-8 to mb-4 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
+        {/* Mobile-first grid layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-4 lg:mb-6">
           <BoxContainer padding="lg" minHeight="400px">
             <SectionTitle>Live Shame Feed</SectionTitle>
             <ErrorBoundary>

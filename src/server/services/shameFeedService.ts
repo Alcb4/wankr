@@ -280,8 +280,8 @@ export class ShameFeedService extends EventEmitter {
         transaction.fromSource = 'shortened';
         transaction.toSource = 'shortened';
         
-        // Skip background handle resolution to reduce API calls
-        // this.resolveHandlesInBackground(transaction);
+        // Resolve handles immediately for better display names
+        await this.resolveHandlesInBackground(transaction);
       }
 
 
@@ -372,11 +372,11 @@ export class ShameFeedService extends EventEmitter {
         this.shameHistory = this.shameHistory.slice(0, 100);
       }
 
-      // Emit the new transaction immediately
-      this.emit('newShameTransaction', enrichedShameTx);
+      // Resolve handles immediately for better display names
+      await this.resolveHandlesInBackground(enrichedShameTx);
 
-      // Skip background handle resolution to reduce API calls
-      // this.resolveHandlesInBackground(enrichedShameTx);
+      // Emit the new transaction after handle resolution
+      this.emit('newShameTransaction', enrichedShameTx);
     } catch (error) {
       console.error(`❌ Error processing shame transaction: ${shameTx.transactionHash}`, error);
     }
@@ -795,10 +795,10 @@ export class ShameFeedService extends EventEmitter {
    */
   private async resolveHandlesInBackground(transaction: ShameTransaction) {
     try {
-      // Use handleResolver which handles the entire flow (cache → register → BNS → Farcaster → shortened)
+      // Use optimized resolution for shame feed (cache-first, then direct)
       const [fromResolution, toResolution] = await Promise.all([
-        this.handleResolver.resolveHandle(transaction.from),
-        this.handleResolver.resolveHandle(transaction.to)
+        this.handleResolver.resolveHandleForShameFeed(transaction.from),
+        this.handleResolver.resolveHandleForShameFeed(transaction.to)
       ]);
 
       // Update the transaction with resolved handles
@@ -814,6 +814,17 @@ export class ShameFeedService extends EventEmitter {
       // Emit an event to update the UI with the resolved handle
       this.emit('handleResolutionUpdate', transaction);
       
+      // Also notify the client-side service
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/handle-resolution-update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transaction })
+        })
+      } catch (error) {
+        console.error('Failed to notify client of handle resolution update:', error)
+      }
+      
     } catch (_error) {
       console.error(`❌ Background handle resolution failed for: ${transaction.transactionHash}`, _error);
       // Keep the fallback values
@@ -822,6 +833,17 @@ export class ShameFeedService extends EventEmitter {
       transaction.fromSource = 'shortened';
       transaction.toSource = 'shortened';
       this.emit('handleResolutionUpdate', transaction);
+      
+      // Also notify the client-side service
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/api/handle-resolution-update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transaction })
+        })
+      } catch (error) {
+        console.error('Failed to notify client of handle resolution update:', error)
+      }
     }
   }
 }

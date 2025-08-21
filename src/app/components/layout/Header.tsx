@@ -24,7 +24,7 @@ export function Header() {
       </h2>
       
       {/* Action buttons */}
-      <div className="flex flex-row gap-3 justify-center items-center mb-4">
+      <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
         <a 
           href="https://github.com/mrpapawheelie/wankr/blob/main/assets/WANKR_Whitepaper.pdf"
           target="_blank"
@@ -32,6 +32,7 @@ export function Header() {
           className={`
             ${components.button.primary}
             hover:scale-105 transition-transform duration-200
+            w-full sm:w-auto text-center
           `}
         >
           Read Whitepaper
@@ -43,6 +44,7 @@ export function Header() {
           className={`
             ${components.button.secondary}
             hover:scale-105 transition-transform duration-200
+            w-full sm:w-auto text-center
           `}
         >
           BUY $WANKR

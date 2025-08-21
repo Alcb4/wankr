@@ -29,34 +29,34 @@ export function ShameItem({ shame, isNew = false }: ShameItemProps) {
 
   return (
     <div className={`
-      rounded-lg p-3 transition-all duration-300 backdrop-blur-md mb-2 min-h-12
+      rounded-lg p-3 sm:p-4 transition-all duration-300 backdrop-blur-md mb-3 min-h-12
       ${isNew 
         ? 'bg-primary/10 border border-primary/60 animate-pulse' 
         : 'bg-card/50 border border-border hover:bg-card/70'
       }
     `}>
-      {/* Main content - single row layout */}
-      <div className="flex justify-between items-center gap-3 h-full">
+      {/* Mobile-first responsive layout */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 h-full">
         {/* Left side - transaction details */}
         <div className="flex-1 min-w-0">
-          {/* Transaction line */}
-          <div className="text-sm text-muted-foreground flex items-center gap-3 mb-1">
-            <span className="text-primary font-semibold">{fromDisplay}</span>
+          {/* Transaction line - responsive text sizes */}
+          <div className="text-sm sm:text-base text-muted-foreground flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+            <span className="text-primary font-semibold break-all">{fromDisplay}</span>
             <span className="text-secondary font-medium text-xs uppercase tracking-wider">shamed</span>
-            <span className="text-primary font-semibold">{toDisplay}</span>
+            <span className="text-primary font-semibold break-all">{toDisplay}</span>
           </div>
           
           {/* Dedicated shame message line */}
-          <div className="min-h-4 mb-1 flex items-center">
+          <div className="min-h-4 mb-2 flex items-center">
             {shame.message && (
-              <div className="text-foreground italic leading-tight text-sm flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+              <div className="text-foreground italic leading-tight text-sm sm:text-base flex-1 min-w-0 break-words">
                 {`"${shame.message}"`}
               </div>
             )}
           </div>
           
           {/* Time and link line */}
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
             <div className="text-muted-foreground font-medium whitespace-nowrap">
               {timeAgo}
             </div>
@@ -75,7 +75,7 @@ export function ShameItem({ shame, isNew = false }: ShameItemProps) {
           </div>
           
           {judgmentHTML && (
-            <div className="mt-1">
+            <div className="mt-2">
               <span className={components.badge.destructive}>
                 {judgmentHTML}
               </span>
@@ -83,20 +83,23 @@ export function ShameItem({ shame, isNew = false }: ShameItemProps) {
           )}
         </div>
         
-        {/* Center - amount comment */}
-        <div className="flex flex-col items-center justify-center flex-shrink-0">
-          <div className="text-xs font-medium text-center opacity-80 text-secondary leading-tight max-w-16">
-            {getWankrAmountComment(shame.amount.toString())}
+        {/* Right side - amount and comment (stacked on mobile, side-by-side on desktop) */}
+        <div className="flex flex-row sm:flex-col items-center justify-between sm:justify-center gap-2 sm:gap-1 sm:ml-2 flex-shrink-0 self-stretch sm:self-center">
+          {/* Amount comment - hidden on mobile to save space */}
+          <div className="hidden sm:flex flex-col items-center justify-center">
+            <div className="text-xs font-medium text-center opacity-80 text-secondary leading-tight max-w-16">
+              {getWankrAmountComment(shame.amount.toString())}
+            </div>
           </div>
-        </div>
-        
-        {/* Right side - amount */}
-        <div className="flex flex-col items-center gap-1 ml-2 flex-shrink-0 justify-center self-center">
-          <div className="text-xl font-extrabold leading-none text-primary">
-            {amount}
-          </div>
-          <div className="text-xs font-semibold uppercase tracking-wider opacity-90 text-primary">
-            WANKR
+          
+          {/* Amount */}
+          <div className="flex flex-col items-center gap-1 justify-center">
+            <div className="text-lg sm:text-xl font-extrabold leading-none text-primary">
+              {amount}
+            </div>
+            <div className="text-xs font-semibold uppercase tracking-wider opacity-90 text-primary">
+              WANKR
+            </div>
           </div>
         </div>
       </div>
