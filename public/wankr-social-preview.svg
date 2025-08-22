@@ -1,0 +1,67 @@
+<svg width="1200" height="600" viewBox="0 0 1200 600" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0C0A12;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0C0A12;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- WANKR gradient -->
+    <linearGradient id="wankrGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#F06BF2;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7630D9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#04588C;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="600" fill="url(#bgGradient)"/>
+  
+  <!-- Decorative blobs -->
+  <circle cx="200" cy="150" r="80" fill="#F06BF2" opacity="0.3" filter="url(#glow)"/>
+  <circle cx="1000" cy="450" r="120" fill="#04588C" opacity="0.3" filter="url(#glow)"/>
+  <circle cx="900" cy="100" r="60" fill="#7630D9" opacity="0.2" filter="url(#glow)"/>
+  
+  <!-- Main WANKR Logo -->
+  <g transform="translate(600, 250)">
+    <!-- WANKR Icon -->
+    <circle cx="-200" cy="-50" r="60" fill="url(#wankrGradient)" filter="url(#glow)"/>
+    <text x="-200" y="-35" text-anchor="middle" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white">W</text>
+    
+    <!-- WANKR Text -->
+    <text x="0" y="0" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="url(#wankrGradient)" filter="url(#glow)">
+      WANKR
+    </text>
+  </g>
+  
+  <!-- Tagline -->
+  <text x="600" y="350" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" font-weight="600" fill="white" opacity="0.9">
+    Shame-as-a-Service Token
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="390" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="white" opacity="0.7">
+    Send shame to anyone on Base, Farcaster, or X
+  </text>
+  
+  <!-- $WANKR badge -->
+  <rect x="500" y="420" width="200" height="40" rx="20" fill="url(#wankrGradient)" opacity="0.9"/>
+  <text x="600" y="445" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="white">
+    $WANKR
+  </text>
+  
+  <!-- Social handles -->
+  <text x="600" y="520" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="white" opacity="0.6">
+    @wankergyatt
+  </text>
+</svg>
