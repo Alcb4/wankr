@@ -30,7 +30,6 @@ export default function HomeNew() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="font-wankr text-2xl font-bold text-primary mb-2">WANKR Dashboard</h1>
-            <p className="text-muted-foreground">Real-time shame feed and upvote analytics</p>
           </div>
           
           {/* Primary Grid - Three Equal Columns */}

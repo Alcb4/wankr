@@ -355,7 +355,7 @@ export function SendWankr() {
         <div>
           
           {/* Platform Selection Buttons */}
-          <div className="grid grid-cols-3 gap-1 mb-2">
+          <div className="grid grid-cols-4 gap-1 mb-2">
             <button
               type="button"
               onClick={() => handlePlatformChange('wallet')}
@@ -389,6 +389,17 @@ export function SendWankr() {
             >
               Farcaster
             </button>
+            <button
+              type="button"
+              onClick={() => handlePlatformChange('x')}
+              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
+                selectedPlatform === 'x'
+                  ? 'bg-primary text-white shadow-lg'
+                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
+              }`}
+            >
+              X (Twitter)
+            </button>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2">
@@ -401,7 +412,8 @@ export function SendWankr() {
               placeholder={
                 selectedPlatform === 'wallet' ? 'To: Enter wallet address (0x...)' :
                 selectedPlatform === 'basenames' ? 'To: Enter Base Name (username.base.eth)' :
-                'To: Enter Farcaster handle (@username)'
+                selectedPlatform === 'farcaster' ? 'To: Enter Farcaster handle (@username)' :
+                'To: Enter X handle (@username)'
               }
               className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               disabled={isSubmitting || isResolving}

@@ -1,15 +1,36 @@
 import type { AddressResolution } from './addressResolutionService'
+import { resolveXHandleWithBankrBot } from './addressResolutionBankr'
 
 export class AddressResolutionX {
   /**
-   * Resolve X (Twitter) handle to address
-   * TODO: Implement with X API
+   * Resolve X (Twitter) handle to address using Bankr Bot API
    */
-  async resolveXHandle(_handle: string): Promise<AddressResolution> {
-    // TODO: Implement X handle resolution
-    // This will use the X API to resolve Twitter handles to addresses
+  async resolveXHandle(handle: string): Promise<AddressResolution> {
+    const cleanHandle = handle.replace(/^@/, '')
     
-    throw new Error('X handle resolution not yet implemented')
+    if (!this.isValidXHandle(cleanHandle)) {
+      throw new Error(`Invalid X handle format: ${handle}`)
+    }
+
+    try {
+      const address = await resolveXHandleWithBankrBot(cleanHandle)
+      
+      if (!address) {
+        throw new Error(`Could not resolve X handle: @${cleanHandle}`)
+      }
+
+      return {
+        address: address.toLowerCase(),
+        displayName: `@${cleanHandle}`,
+        source: 'x',
+        handle: cleanHandle,
+        platform: 'twitter',
+        verified: true,
+        lastUpdated: Date.now()
+      }
+    } catch (error) {
+      throw new Error(`Failed to resolve X handle @${cleanHandle}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   /**
