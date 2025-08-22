@@ -30,11 +30,11 @@ export const metadata: Metadata = {
     description: 'The world\'s first Shame-as-a-Service token. $WANKR - Send shame to anyone on Base, Farcaster, or X (Twitter).',
           images: [
         {
-          url: 'https://wankr-alpha.vercel.app/wankr-icon.svg',
+          url: 'https://wankr-alpha.vercel.app/wankr-logo.jpg',
           width: 1200,
-          height: 600,
+          height: 1200,
           alt: 'WANKR - Shame-as-a-Service Token',
-          type: 'image/svg+xml',
+          type: 'image/jpeg',
         },
       ],
   },
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     creator: '@wankergyatt',
     title: 'WANKR - Shame-as-a-Service Token',
     description: 'The world\'s first Shame-as-a-Service token. $WANKR - Send shame to anyone on Base, Farcaster, or X (Twitter).',
-    images: ['https://wankr-alpha.vercel.app/wankr-icon.svg'],
+    images: ['https://wankr-alpha.vercel.app/wankr-logo.jpg'],
   },
   other: {
     'theme-color': '#7630D9',
