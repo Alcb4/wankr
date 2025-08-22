@@ -1,14 +1,30 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useShameFeed } from '../../hooks/useShameFeed'
+import { useRealtimeUpdates } from '../../hooks/useRealtimeUpdates'
 // import { enhancedShameFeedService } from '../../services/enhancedShameFeedService'
 import { ShameItem } from './ShameItem'
 import { Button, Card } from '../ui'
 import { components, layout } from '../../theme'
+import { RealtimeStatus } from '../RealtimeStatus/RealtimeStatus'
 
 export function ShameFeed() {
   const { transactions, stats, loading, error, refresh } = useShameFeed()
+  
+  // Real-time updates
+  const { isConnected, lastUpdate, error: realtimeError } = useRealtimeUpdates({
+    subscriptions: ['shame-feed'],
+    clientId: 'shame-feed-client'
+  })
+
+  // Handle real-time updates
+  useEffect(() => {
+    if (lastUpdate && lastUpdate.type === 'shame-feed-update') {
+      console.log('🔄 ShameFeed: Received real-time update, refreshing data...')
+      refresh()
+    }
+  }, [lastUpdate, refresh])
 
   // Listen for refresh events from SendWankr component
   useEffect(() => {
@@ -38,7 +54,7 @@ export function ShameFeed() {
     return (
       <div className={layout.flex.center + ' py-8'}>
         <p className="text-destructive mb-4">Error: {error}</p>
-        <Button variant="primary" onClick={refresh}>
+        <Button variant="default" onClick={refresh}>
           Retry
         </Button>
       </div>
@@ -60,19 +76,10 @@ export function ShameFeed() {
           </div>
 
           {/* Live Status */}
-          <div className="flex items-center gap-2 px-3 py-1 rounded-md border flex-shrink-0" style={{ 
-            backgroundColor: error ? 'rgba(255, 71, 87, 0.1)' : 'rgba(46, 213, 115, 0.1)', 
-            borderColor: error ? '#ff4757' : '#2ed573' 
-          }}>
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ 
-              backgroundColor: error ? '#ff4757' : '#2ed573' 
-            }}></div>
-            <span className="text-xs font-medium" style={{ 
-              color: error ? '#ff4757' : '#2ed573' 
-            }}>
-              {error ? 'Error' : 'Live'}
-            </span>
-          </div>
+          <RealtimeStatus 
+            subscriptions={['shame-feed']}
+            clientId="shame-feed-client"
+          />
         </div>
       </Card>
 

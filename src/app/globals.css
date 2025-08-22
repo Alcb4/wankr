@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Default styles (light mode) */
 :root {
@@ -24,19 +25,16 @@
   --border: 207 95% 28%;
   --input: 240 10% 96%;
   --ring: 262 64% 52%;
-  --liveStatus: 142 76% 36%;
-  --liveStatusBg: 142 76% 36% / 0.1;
   
-  /* Official WANKR Custom Colors (Adobe Color Theme) */
-  --wankr-primary: 264 68% 51%; /* #7630D9 */
-  --wankr-secondary: 174 82% 71%; /* #79F2E6 */
-  --wankr-accent: 299 83% 68%; /* #F06BF2 */
-  --wankr-cyber: 202 94% 28%; /* #04588C */
-  --wankr-dark-purple: 275 52% 29%; /* #532473 */
-  --wankr-text-primary: 264 68% 51%;
-  --wankr-text-secondary: 174 82% 71%;
+  /* Wankr Custom Colors */
+  --wankr-primary: 262 64% 52%;
+  --wankr-secondary: 183 89% 72%;
+  --wankr-accent: 300 89% 66%;
+  --wankr-cyber: 207 95% 28%;
+  --wankr-text-primary: 262 64% 52%;
+  --wankr-text-secondary: 262 64% 52%;
   
-  /* Gradients - Original WANKR gradient with dark purple middle */
+  /* Gradients */
   --wankr-gradient-hero: linear-gradient(90deg, #F06BF2 0%, #7630D9 50%, #79F2E6 100%);
   --wankr-gradient-cta: linear-gradient(135deg, #7630D9 0%, #04588C 100%);
   --wankr-gradient-section: radial-gradient(circle at 20% 10%, #F06BF2 0%, transparent 40%), radial-gradient(circle at 80% 80%, #04588C 0%, transparent 45%);
@@ -61,7 +59,7 @@
 /* Dark mode styles - these will override the root styles */
 .dark {
   /* Wankr Color Scheme - Dark Mode */
-  --background: 0 0% 0%; /* Pure black background like original */
+  --background: 0 0% 10%;
   --foreground: 0 0% 100%;
   --card: 0 0% 16%;
   --card-foreground: 0 0% 100%;
@@ -71,7 +69,7 @@
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 16%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 0 0% 25%;
+  --muted: 0 0% 16%;
   --muted-foreground: 183 89% 72%;
   --accent: 207 95% 28%;
   --accent-foreground: 0 0% 100%;
@@ -80,17 +78,14 @@
   --border: 207 95% 28%;
   --input: 0 0% 16%;
   --ring: 262 64% 52%;
-  --liveStatus: 142 76% 36%;
-  --liveStatusBg: 142 76% 36% / 0.1;
   
-  /* Official WANKR Custom Colors - Dark Mode */
-  --wankr-primary: 264 68% 51%; /* #7630D9 */
-  --wankr-secondary: 174 82% 71%; /* #79F2E6 */
-  --wankr-accent: 299 83% 68%; /* #F06BF2 */
-  --wankr-cyber: 202 94% 28%; /* #04588C */
-  --wankr-dark-purple: 275 52% 29%; /* #532473 */
+  /* Wankr Custom Colors - Dark Mode */
+  --wankr-primary: 262 64% 52%;
+  --wankr-secondary: 183 89% 72%;
+  --wankr-accent: 300 89% 66%;
+  --wankr-cyber: 207 95% 28%;
   --wankr-text-primary: 0 0% 100%;
-  --wankr-text-secondary: 174 82% 71%;
+  --wankr-text-secondary: 183 89% 72%;
   
   /* Chart Colors - Dark Mode */
   --chart-1: 262 64% 52%;
@@ -125,7 +120,6 @@ body {
 .bg-card { background-color: hsl(var(--card)); }
 .text-card-foreground { color: hsl(var(--card-foreground)); }
 .bg-primary { background-color: hsl(var(--primary)); }
-.text-primary { color: hsl(var(--primary)); }
 .text-primary-foreground { color: hsl(var(--primary-foreground)); }
 .bg-secondary { background-color: hsl(var(--secondary)); }
 .text-secondary-foreground { color: hsl(var(--secondary-foreground)); }
@@ -186,30 +180,67 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
-@keyframes spin {
+/* Dashboard-specific classes that were missing */
+.glassmorphism-dark {
+  background: rgba(16, 16, 16, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Light mode version */
+.light .glassmorphism-dark {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.smooth-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+.card-hover {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Additional missing classes */
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.glow-animation {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.hover-lift {
+  transition: transform 0.2s ease-in-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+@keyframes glow {
   from {
-    transform: rotate(0deg);
+    text-shadow: 0 0 5px currentColor, 0 0 10px currentColor, 0 0 15px currentColor;
   }
   to {
-    transform: rotate(360deg);
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
   }
-}
-
-/* Glass morphism utility classes */
-.glass-card {
-  background: rgba(26, 22, 32, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.glass-muted {
-  background: rgba(26, 22, 32, 0.6);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.glass-input {
-  background: rgba(26, 22, 32, 0.7);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }

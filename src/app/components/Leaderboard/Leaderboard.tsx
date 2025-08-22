@@ -18,7 +18,7 @@ export function Leaderboard() {
   } = useLeaderboard()
 
   const [showAll, setShowAll] = useState(false)
-  const displayedEntries = showAll ? currentLeaderboard : currentLeaderboard.slice(0, 20)
+  const displayedEntries = showAll ? currentLeaderboard : currentLeaderboard.slice(0, 10)
 
   if (error) {
     return (
@@ -35,14 +35,14 @@ export function Leaderboard() {
         {/* Tab Buttons */}
         <div className="flex gap-2">
           <Button
-            variant={activeTab === 'received' ? 'primary' : 'secondary'}
+            variant={activeTab === 'received' ? 'default' : 'secondary'}
             size="sm"
             onClick={() => setActiveTab('received')}
           >
             Top $WANKR&apos;s
           </Button>
           <Button
-            variant={activeTab === 'sent' ? 'primary' : 'secondary'}
+            variant={activeTab === 'sent' ? 'default' : 'secondary'}
             size="sm"
             onClick={() => setActiveTab('sent')}
           >
@@ -71,13 +71,13 @@ export function Leaderboard() {
       />
 
       {/* Expand Button */}
-      {currentLeaderboard.length > 20 && (
+      {currentLeaderboard.length > 10 && (
         <div className={layout.flex.center + ' mt-4'}>
           <Button
             variant="secondary"
             onClick={() => setShowAll(!showAll)}
           >
-            {showAll ? `Show Top 20` : `Show All ${currentLeaderboard.length}`}
+            {showAll ? `Show Top 10` : `Show All ${currentLeaderboard.length}`}
           </Button>
         </div>
       )}

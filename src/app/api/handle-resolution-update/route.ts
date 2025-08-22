@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { enhancedShameFeedService } from '../../services/enhancedShameFeedService'
 
 export async function POST(request: NextRequest) {
   try {
     const { transaction } = await request.json()
     
     // Emit the handle resolution update to the enhanced shame feed service
-    const { enhancedShameFeedService } = await import('../../services/enhancedShameFeedService')
     enhancedShameFeedService.emitHandleUpdate(transaction)
     
     return NextResponse.json({ success: true })

@@ -10,6 +10,10 @@ export interface RegisterEntry {
   avatar?: string;
   lastUpdated: number;
   refreshDue: number;
+  accessCount?: number; // Track how often this entry is accessed
+  lastAccessed?: number; // Track last access time
+  errorCount?: number; // Track resolution errors
+  lastError?: number; // Track last error time
 }
 
 export class RegisterService {
@@ -39,7 +43,10 @@ export class RegisterService {
         displayName: '0xfbd2...a867',
         source: 'shortened',
         lastUpdated: Date.now(),
-        refreshDue: Date.now() + this.generateRandomTTL()
+        refreshDue: Date.now() + this.generateRandomTTL(),
+        accessCount: 0,
+        lastAccessed: Date.now(),
+        errorCount: 0
       },
       {
         address: '0x5e2e23cf4d3be0e6e8770c55e462eebf047ec09e',
@@ -129,7 +136,14 @@ export class RegisterService {
     ];
 
     for (const entry of defaultEntries) {
-      this.register.set(entry.address.toLowerCase(), entry);
+      // Ensure all entries have tracking fields
+      const completeEntry = {
+        ...entry,
+        accessCount: 0,
+        lastAccessed: Date.now(),
+        errorCount: 0
+      };
+      this.register.set(entry.address.toLowerCase(), completeEntry);
     }
 
 
@@ -148,10 +162,14 @@ export class RegisterService {
 
     // Check if entry has expired
     if (Date.now() >= entry.refreshDue) {
-      
+      console.log(`⏰ Entry expired for ${normalizedAddress}: ${entry.source} - ${entry.displayName}`);
       this.register.delete(normalizedAddress);
       return null;
     }
+
+    // Update access tracking
+    entry.accessCount = (entry.accessCount || 0) + 1;
+    entry.lastAccessed = Date.now();
 
     return entry;
   }
@@ -174,8 +192,24 @@ export class RegisterService {
    */
   addToRegister(entry: RegisterEntry): void {
     const normalizedAddress = entry.address.toLowerCase();
+    
+    // Initialize tracking fields if not present
+    const existingEntry = this.register.get(normalizedAddress);
+    if (existingEntry) {
+      // Preserve access tracking from existing entry
+      entry.accessCount = existingEntry.accessCount || 0;
+      entry.lastAccessed = existingEntry.lastAccessed || Date.now();
+      entry.errorCount = existingEntry.errorCount || 0;
+      entry.lastError = existingEntry.lastError;
+    } else {
+      // Initialize new entry tracking
+      entry.accessCount = 0;
+      entry.lastAccessed = Date.now();
+      entry.errorCount = 0;
+    }
+    
     this.register.set(normalizedAddress, entry);
-
+    console.log(`📝 Added/Updated register entry: ${normalizedAddress} (${entry.source})`);
   }
 
   /**
@@ -215,9 +249,19 @@ export class RegisterService {
   /**
    * Get register statistics
    */
-  getRegisterStats(): { totalEntries: number; expiredEntries: number; validEntries: number } {
+  getRegisterStats(): { 
+    totalEntries: number; 
+    expiredEntries: number; 
+    validEntries: number;
+    highAccessEntries: number;
+    errorProneEntries: number;
+    averageAccessCount: number;
+  } {
     let expiredCount = 0;
     let validCount = 0;
+    let highAccessCount = 0;
+    let errorProneCount = 0;
+    let totalAccessCount = 0;
     const now = Date.now();
 
     for (const entry of this.register.values()) {
@@ -225,13 +269,27 @@ export class RegisterService {
         expiredCount++;
       } else {
         validCount++;
+        totalAccessCount += entry.accessCount || 0;
+        
+        // Track high-access entries (accessed more than 10 times)
+        if ((entry.accessCount || 0) > 10) {
+          highAccessCount++;
+        }
+        
+        // Track error-prone entries (more than 3 errors)
+        if ((entry.errorCount || 0) > 3) {
+          errorProneCount++;
+        }
       }
     }
 
     return {
       totalEntries: this.register.size,
       expiredEntries: expiredCount,
-      validEntries: validCount
+      validEntries: validCount,
+      highAccessEntries: highAccessCount,
+      errorProneEntries: errorProneCount,
+      averageAccessCount: validCount > 0 ? Math.round(totalAccessCount / validCount) : 0
     };
   }
 
@@ -250,8 +308,65 @@ export class RegisterService {
     }
 
     if (cleanedCount > 0) {
-  
+      console.log(`🧹 Cleaned up ${cleanedCount} expired entries from register`);
     }
+  }
+
+  /**
+   * Record an error for an entry
+   */
+  recordError(address: string): void {
+    const normalizedAddress = address.toLowerCase();
+    const entry = this.register.get(normalizedAddress);
+    
+    if (entry) {
+      entry.errorCount = (entry.errorCount || 0) + 1;
+      entry.lastError = Date.now();
+      console.log(`❌ Recorded error for ${normalizedAddress} (${entry.errorCount} total errors)`);
+    }
+  }
+
+  /**
+   * Get entries that need refresh (high access or error-prone)
+   */
+  getEntriesNeedingRefresh(): string[] {
+    const now = Date.now();
+    const addresses: string[] = [];
+    
+    for (const [address, entry] of this.register.entries()) {
+      if (now >= entry.refreshDue) continue; // Skip expired entries
+      
+      // Refresh if high access (more than 20 times) or error-prone (more than 5 errors)
+      if ((entry.accessCount || 0) > 20 || (entry.errorCount || 0) > 5) {
+        addresses.push(address);
+      }
+    }
+    
+    return addresses;
+  }
+
+  /**
+   * Smart cache invalidation based on usage patterns
+   */
+  smartCacheInvalidation(): number {
+    const addressesToRefresh = this.getEntriesNeedingRefresh();
+    let invalidatedCount = 0;
+    
+    for (const address of addressesToRefresh) {
+      const entry = this.register.get(address);
+      if (entry) {
+        // Reduce TTL for high-access entries to refresh them more frequently
+        const newTTL = (entry.accessCount || 0) > 20 ? 
+          Math.min(entry.refreshDue - Date.now(), 24 * 60 * 60 * 1000) : // 1 day max
+          entry.refreshDue - Date.now();
+        
+        entry.refreshDue = Date.now() + newTTL;
+        invalidatedCount++;
+        console.log(`🔄 Smart refresh for ${address}: ${entry.source} (${entry.accessCount || 0} accesses, ${entry.errorCount || 0} errors)`);
+      }
+    }
+    
+    return invalidatedCount;
   }
 
   /**
@@ -260,6 +375,7 @@ export class RegisterService {
   private startCleanupTimer(): void {
     setInterval(() => {
       this.cleanupExpiredEntries();
+      this.smartCacheInvalidation();
     }, this.CLEANUP_INTERVAL);
   }
 

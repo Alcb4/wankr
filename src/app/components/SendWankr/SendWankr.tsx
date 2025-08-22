@@ -349,23 +349,20 @@ export function SendWankr() {
   }
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-2">
+      <form onSubmit={handleSubmit} className="space-y-2">
         {/* Target Address Input */}
         <div>
-          <label htmlFor="targetAddress" className="block text-sm font-medium text-white mb-2">
-            Target Address or Handle
-          </label>
           
           {/* Platform Selection Buttons */}
-          <div className="flex gap-1 sm:gap-2 mb-2">
+          <div className="grid grid-cols-3 gap-1 mb-2">
             <button
               type="button"
               onClick={() => handlePlatformChange('wallet')}
-              className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
+              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
                 selectedPlatform === 'wallet'
                   ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-muted/80 border border-black'
+                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
               }`}
             >
               Wallet
@@ -373,10 +370,10 @@ export function SendWankr() {
             <button
               type="button"
               onClick={() => handlePlatformChange('basenames')}
-              className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
+              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
                 selectedPlatform === 'basenames'
                   ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-muted/80 border border-black'
+                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
               }`}
             >
               Base Names
@@ -384,10 +381,10 @@ export function SendWankr() {
             <button
               type="button"
               onClick={() => handlePlatformChange('farcaster')}
-              className={`px-2 sm:px-3 py-1 text-xs font-medium rounded-full transition-colors flex-1 sm:flex-none ${
+              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
                 selectedPlatform === 'farcaster'
                   ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-muted/80 border border-black'
+                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
               }`}
             >
               Farcaster
@@ -402,29 +399,27 @@ export function SendWankr() {
               value={formData.targetAddress}
               onChange={handleInputChange}
               placeholder={
-                selectedPlatform === 'wallet' ? 'Enter wallet address (0x...)' :
-                selectedPlatform === 'basenames' ? 'Enter Base Name (username.base.eth)' :
-                'Enter Farcaster handle (@username)'
+                selectedPlatform === 'wallet' ? 'To: Enter wallet address (0x...)' :
+                selectedPlatform === 'basenames' ? 'To: Enter Base Name (username.base.eth)' :
+                'To: Enter Farcaster handle (@username)'
               }
-              className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               disabled={isSubmitting || isResolving}
             />
             <button
               type="button"
               onClick={resolveHandle}
               disabled={!formData.targetAddress.trim() || isSubmitting || isResolving}
-              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors sm:w-auto"
+              className="px-3 py-2 bg-primary text-white rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors sm:w-auto font-medium text-sm"
             >
               {isResolving ? 'Resolving...' : 'Resolve'}
             </button>
           </div>
-
-
         </div>
 
         {/* Reason for Shame Input */}
         <div>
-          <label htmlFor="reason" className="block text-sm font-medium text-white mb-2">
+          <label htmlFor="reason" className="block text-sm font-medium text-white mb-1">
             Reason for Shame
           </label>
           <textarea
@@ -434,14 +429,14 @@ export function SendWankr() {
             onChange={handleInputChange}
             placeholder="Why are you shaming them? (optional)"
             rows={2}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none text-sm"
             disabled={isSubmitting}
           />
         </div>
 
         {/* Amount Display and Slider */}
         <div>
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-1">
             <label className="text-sm font-medium text-white">
               Amount
             </label>
@@ -463,7 +458,7 @@ export function SendWankr() {
             disabled={isSubmitting}
           />
           
-          <div className="relative mt-1 mb-6">
+          <div className="relative mt-1 mb-4">
             <div className="absolute inset-x-0 flex text-xs text-white">
               <span style={{ position: 'absolute', left: '0%', transform: 'translateX(0%)' }}>1</span>
               <span style={{ position: 'absolute', left: '44.44%', transform: 'translateX(-50%)' }}>5</span>
@@ -476,19 +471,17 @@ export function SendWankr() {
         <button
           type="submit"
           disabled={isSubmitting || !resolvedAddress}
-          className="w-full py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full py-2 px-4 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm mt-3"
         >
           {isSubmitting ? 'Preparing...' : getButtonText()}
         </button>
         
         {/* Address Resolution Status */}
         {!resolvedAddress && formData.targetAddress.trim() && (
-          <div className="text-sm text-muted-foreground text-center">
+          <div className="text-xs text-muted-foreground text-center">
             ⚠️ Please resolve the address before sending
           </div>
         )}
-
-
       </form>
 
       {/* Transaction Modal with OnchainKit */}

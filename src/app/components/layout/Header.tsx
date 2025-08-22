@@ -49,6 +49,16 @@ export function Header() {
         >
           BUY $WANKR
         </a>
+        <a 
+          href="/dashboard"
+          className={`
+            ${components.button.accent}
+            hover:scale-105 transition-transform duration-200
+            px-6 py-3 min-w-[140px] text-center
+          `}
+        >
+          🚀 Use WANKR
+        </a>
       </div>
       
       {/* Twitter handle with X logo - reduced margin */}

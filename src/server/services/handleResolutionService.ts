@@ -23,6 +23,16 @@ export class HandleResolutionService {
   private fidResolver: HandleResolutionFID;
   private basenamesResolver: HandleResolutionBasenames;
   
+  // Rate limiting
+  private requestCounts: Map<string, { count: number; resetTime: number }> = new Map();
+  private readonly RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+  private readonly MAX_REQUESTS_PER_WINDOW = 100; // Max requests per minute
+  
+  // Error tracking
+  private errorCounts: Map<string, { count: number; lastError: number }> = new Map();
+  private readonly MAX_ERRORS_BEFORE_BACKOFF = 5;
+  private readonly ERROR_BACKOFF_TIME = 5 * 60 * 1000; // 5 minutes
+  
   // Priority order for handle sources (lower number = higher priority)
   private readonly PRIORITY_ORDER = {
     'basenames': 1,    // Highest priority (on-chain, verified)
@@ -84,6 +94,18 @@ export class HandleResolutionService {
     // Cache the fallback immediately
     this.cache.set(normalizedAddress, fallbackResolution);
 
+    // Add fallback to register for future use
+    this.registerService.addToRegister({
+      address: normalizedAddress,
+      displayName: fallbackResolution.displayName,
+      source: fallbackResolution.source,
+      handle: normalizedAddress,
+      platform: 'ethereum',
+      verified: false,
+      lastUpdated: fallbackResolution.lastUpdated,
+      refreshDue: Date.now() + this.generateRandomTTL()
+    });
+
     // Queue for background processing (non-blocking)
     this.queueForBackgroundProcessing(normalizedAddress);
 
@@ -122,6 +144,18 @@ export class HandleResolutionService {
       results[normalizedAddress] = fallbackResolution;
       this.cache.set(normalizedAddress, fallbackResolution);
       
+      // Add fallback to register for future use
+      this.registerService.addToRegister({
+        address: normalizedAddress,
+        displayName: fallbackResolution.displayName,
+        source: fallbackResolution.source,
+        handle: normalizedAddress,
+        platform: 'ethereum',
+        verified: false,
+        lastUpdated: fallbackResolution.lastUpdated,
+        refreshDue: Date.now() + this.generateRandomTTL()
+      });
+      
       // Queue for background processing
       this.queueForBackgroundProcessing(normalizedAddress);
     }
@@ -130,10 +164,97 @@ export class HandleResolutionService {
   }
 
   /**
+   * Check rate limiting for an address
+   */
+  private checkRateLimit(address: string): boolean {
+    const normalizedAddress = address.toLowerCase();
+    const now = Date.now();
+    const requestData = this.requestCounts.get(normalizedAddress);
+    
+    if (!requestData || now > requestData.resetTime) {
+      // Reset or initialize rate limit
+      this.requestCounts.set(normalizedAddress, {
+        count: 1,
+        resetTime: now + this.RATE_LIMIT_WINDOW
+      });
+      return true;
+    }
+    
+    if (requestData.count >= this.MAX_REQUESTS_PER_WINDOW) {
+      console.log(`🚫 Rate limit exceeded for ${address}: ${requestData.count} requests in window`);
+      return false;
+    }
+    
+    requestData.count++;
+    return true;
+  }
+
+  /**
+   * Check if address is in error backoff
+   */
+  private isInErrorBackoff(address: string): boolean {
+    const normalizedAddress = address.toLowerCase();
+    const errorData = this.errorCounts.get(normalizedAddress);
+    
+    if (!errorData) return false;
+    
+    const now = Date.now();
+    if (errorData.count >= this.MAX_ERRORS_BEFORE_BACKOFF && 
+        now - errorData.lastError < this.ERROR_BACKOFF_TIME) {
+      console.log(`⏸️  Address ${address} in error backoff (${errorData.count} errors)`);
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Record an error for an address
+   */
+  private recordError(address: string): void {
+    const normalizedAddress = address.toLowerCase();
+    const now = Date.now();
+    const errorData = this.errorCounts.get(normalizedAddress);
+    
+    if (errorData) {
+      errorData.count++;
+      errorData.lastError = now;
+    } else {
+      this.errorCounts.set(normalizedAddress, {
+        count: 1,
+        lastError: now
+      });
+    }
+    
+    // Record error in register
+    this.registerService.recordError(normalizedAddress);
+  }
+
+  /**
+   * Clear error count for an address (on successful resolution)
+   */
+  private clearErrorCount(address: string): void {
+    const normalizedAddress = address.toLowerCase();
+    this.errorCounts.delete(normalizedAddress);
+  }
+
+  /**
    * Queue address for background processing (non-blocking)
    */
   private queueForBackgroundProcessing(address: string): void {
     const normalizedAddress = address.toLowerCase();
+    
+    // Check rate limiting
+    if (!this.checkRateLimit(address)) {
+      console.log(`🚫 Rate limited: skipping background processing for ${address}`);
+      return;
+    }
+    
+    // Check error backoff
+    if (this.isInErrorBackoff(address)) {
+      console.log(`⏸️  Error backoff: skipping background processing for ${address}`);
+      return;
+    }
     
     // Check if we already have a good resolution in cache
     const cached = this.cache.get(normalizedAddress);
@@ -198,6 +319,7 @@ export class HandleResolutionService {
         }
       } catch (error) {
         console.error('Basenames processing error:', error);
+        this.recordError(address);
       }
     });
   }
@@ -289,6 +411,8 @@ export class HandleResolutionService {
         refreshDue: Date.now() + this.generateRandomTTL()
       });
       
+      // Clear error count on successful resolution
+      this.clearErrorCount(address);
       console.log(`✅ Updated handle for ${address}: ${newResolution.source} - ${newResolution.displayName}`);
     } else {
       console.log(`⏭️  Skipped lower priority handle for ${address}: ${newResolution.source} vs ${currentResolution?.source}`);
@@ -327,6 +451,53 @@ export class HandleResolutionService {
     return {
       size: this.cache.size,
       entries: Array.from(this.cache.keys())
+    };
+  }
+
+  /**
+   * Get comprehensive service statistics
+   */
+  getServiceStats(): {
+    cacheSize: number;
+    registerStats: unknown;
+    rateLimitStats: { totalAddresses: number; rateLimitedAddresses: number };
+    errorStats: { totalAddresses: number; errorProneAddresses: number };
+    resolutionStats: { totalResolutions: number; successRate: number };
+  } {
+    const registerStats = this.registerService.getRegisterStats();
+    
+    // Calculate rate limit stats
+    const now = Date.now();
+    let rateLimitedCount = 0;
+    for (const [_, data] of this.requestCounts.entries()) {
+      if (data.count >= this.MAX_REQUESTS_PER_WINDOW && now <= data.resetTime) {
+        rateLimitedCount++;
+      }
+    }
+    
+    // Calculate error stats
+    let errorProneCount = 0;
+    for (const [_, data] of this.errorCounts.entries()) {
+      if (data.count >= this.MAX_ERRORS_BEFORE_BACKOFF) {
+        errorProneCount++;
+      }
+    }
+    
+    return {
+      cacheSize: this.cache.size,
+      registerStats,
+      rateLimitStats: {
+        totalAddresses: this.requestCounts.size,
+        rateLimitedAddresses: rateLimitedCount
+      },
+      errorStats: {
+        totalAddresses: this.errorCounts.size,
+        errorProneAddresses: errorProneCount
+      },
+      resolutionStats: {
+        totalResolutions: this.cache.size + registerStats.totalEntries,
+        successRate: registerStats.validEntries / (registerStats.totalEntries || 1) * 100
+      }
     };
   }
 

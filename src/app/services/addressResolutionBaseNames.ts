@@ -2,6 +2,7 @@ import { getAddress } from '@coinbase/onchainkit/identity'
 import { base } from 'viem/chains'
 import { createPublicClient, http } from 'viem'
 import type { AddressResolution } from './addressResolutionService'
+import { handleError } from '../utils/errorHandler'
 
 export interface BaseNamesResolution {
   address: string
@@ -59,13 +60,17 @@ export class AddressResolutionBaseNames {
       }
 
     } catch (error) {
-      console.error(`❌ Base Name resolution failed for ${handle}:`, error)
+      const errorResponse = handleError(error, {
+        component: 'AddressResolutionBaseNames',
+        action: 'resolveBasename',
+        userId: handle
+      })
       
       if (error instanceof Error && error.message.includes('not found')) {
         throw new Error(`Base Name not found: ${handle}`)
       }
       
-      throw new Error(`Failed to resolve Base Name: ${handle}`)
+      throw new Error(errorResponse.userMessage)
     }
   }
 
@@ -131,7 +136,12 @@ export class AddressResolutionBaseNames {
       return results
       
     } catch (error) {
-      console.error('❌ Bulk Base Name resolution failed:', error)
+      const errorResponse = handleError(error, {
+        component: 'AddressResolutionBaseNames',
+        action: 'resolveBasenamesBulk',
+        userId: `${handles.length} handles`
+      })
+      console.error('❌ Bulk Base Name resolution failed:', errorResponse.technicalMessage)
       return results
     }
   }

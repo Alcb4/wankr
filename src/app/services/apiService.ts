@@ -1,4 +1,5 @@
 import type { ShameTransaction, ShameFeedStats, LeaderboardData } from '../config/types'
+import { withRetry, handleError } from '../utils/errorHandler'
 
 // Use environment variable for API URL, fallback to same port as Next.js server  
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000/api'
@@ -6,35 +7,29 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 class ApiService {
   // Get shame feed data
   async getShameFeed(): Promise<{ shameHistory: ShameTransaction[], stats: ShameFeedStats }> {
-    try {
+    return withRetry(async () => {
       const response = await fetch(`${API_BASE_URL}/shame-feed`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       return await response.json()
-    } catch (error) {
-      console.error('Failed to fetch shame feed:', error)
-      throw error
-    }
+    }, { component: 'ApiService', action: 'getShameFeed' })
   }
 
   // Get leaderboard data
   async getLeaderboards(period: string = 'all'): Promise<LeaderboardData> {
-    try {
+    return withRetry(async () => {
       const response = await fetch(`${API_BASE_URL}/leaderboards/${period}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       return await response.json()
-    } catch (error) {
-      console.error('Failed to fetch leaderboards:', error)
-      throw error
-    }
+    }, { component: 'ApiService', action: 'getLeaderboards', userId: period })
   }
 
   // Resolve handles in bulk
   async resolveHandlesBulk(addresses: string[]): Promise<{ [address: string]: { displayName: string; source: string } }> {
-    try {
+    return withRetry(async () => {
       const response = await fetch(`${API_BASE_URL}/resolve-handles-bulk`, {
         method: 'POST',
         headers: {
@@ -46,24 +41,18 @@ class ApiService {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       return await response.json()
-    } catch (error) {
-      console.error('Failed to resolve handles:', error)
-      throw error
-    }
+    }, { component: 'ApiService', action: 'resolveHandlesBulk', userId: `${addresses.length} addresses` })
   }
 
   // Test Dune API
   async testDune(): Promise<{ success: boolean; data?: unknown; error?: string }> {
-    try {
+    return withRetry(async () => {
       const response = await fetch(`${API_BASE_URL}/test-dune`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       return await response.json()
-    } catch (error) {
-      console.error('Failed to test Dune API:', error)
-      throw error
-    }
+    }, { component: 'ApiService', action: 'testDune' })
   }
 }
 

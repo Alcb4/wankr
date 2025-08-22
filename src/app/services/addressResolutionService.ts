@@ -1,6 +1,7 @@
 import { AddressResolutionBaseNames } from './addressResolutionBaseNames'
 import { AddressResolutionFarcaster } from './addressResolutionFarcaster'
 import { AddressResolutionX } from './addressResolutionX'
+import { handleError } from '../utils/errorHandler'
 
 export interface AddressResolution {
   address: string
@@ -154,7 +155,12 @@ export class AddressResolutionService {
               const resolution = this.resolveWalletAddress(handle)
               bulkResults.set(handle, resolution)
             } catch (error) {
-              console.error(`❌ Invalid wallet address: ${handle}`)
+              const errorResponse = handleError(error, {
+                component: 'AddressResolutionService',
+                action: 'resolveWalletAddress',
+                userId: handle
+              })
+              console.error(`❌ Invalid wallet address: ${handle}`, errorResponse.technicalMessage)
             }
           })
           break
@@ -173,7 +179,12 @@ export class AddressResolutionService {
       return results
       
     } catch (error) {
-      console.error('❌ Bulk resolution failed:', error)
+      const errorResponse = handleError(error, {
+        component: 'AddressResolutionService',
+        action: 'resolveHandlesBulk',
+        userId: `${handles.length} handles for ${platform}`
+      })
+      console.error('❌ Bulk resolution failed:', errorResponse.technicalMessage)
       return results
     }
   }

@@ -48,12 +48,10 @@ export class DuneUpvoteService {
 
       // Transform the data - generate synthetic dates since Dune query doesn't include dates
       const data: DailyUpvoteData[] = result.result.rows.map((row: Record<string, unknown>, index: number) => {
-        // Generate dates going backwards from today, one day per data point
-        // Start from 63 days ago (based on the data length we saw)
-        const today = new Date()
-        const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 63)
+        // Generate dates starting from token creation (August 6th, 2025)
+        const tokenCreationDate = new Date('2025-08-06')
         
-        const date = new Date(startDate)
+        const date = new Date(tokenCreationDate)
         date.setDate(date.getDate() + index) // Add days for each data point
         
         return {

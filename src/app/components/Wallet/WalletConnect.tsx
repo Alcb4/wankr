@@ -35,11 +35,11 @@ export function WalletConnect() {
   return (
     <>
       <Button 
-        variant="primary"
-        isLoading={isConnecting}
+        variant="default"
         onClick={handleWalletAction}
         className="w-full min-h-[48px] text-lg font-semibold"
         data-wallet-button
+        disabled={isConnecting}
       >
         {isConnecting 
           ? 'Connecting...' 
@@ -91,7 +91,7 @@ export function WalletConnect() {
               Close
             </Button>
             <Button 
-              variant="danger"
+              variant="destructive"
               onClick={handleDisconnect}
               className="px-6 py-2 text-sm"
             >

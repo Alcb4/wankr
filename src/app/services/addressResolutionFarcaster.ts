@@ -1,4 +1,5 @@
 import type { AddressResolution } from './addressResolutionService'
+import { handleError } from '../utils/errorHandler'
 
 export class AddressResolutionFarcaster {
   constructor() {
@@ -40,10 +41,12 @@ export class AddressResolutionFarcaster {
       }
 
     } catch (error) {
-      if (error instanceof Error) {
-        throw error
-      }
-      throw new Error(`Failed to resolve Farcaster handle: ${handle}`)
+      const errorResponse = handleError(error, {
+        component: 'AddressResolutionFarcaster',
+        action: 'resolveFarcasterHandle',
+        userId: handle
+      })
+      throw new Error(errorResponse.userMessage)
     }
   }
 
@@ -82,7 +85,12 @@ export class AddressResolutionFarcaster {
       })).filter((result: AddressResolution) => result.address)
 
     } catch (error) {
-      console.error('Bulk Farcaster resolution failed:', error)
+      const errorResponse = handleError(error, {
+        component: 'AddressResolutionFarcaster',
+        action: 'resolveFarcasterHandlesBulk',
+        userId: `${validHandles.length} handles`
+      })
+      console.error('Bulk Farcaster resolution failed:', errorResponse.technicalMessage)
       return []
     }
   }

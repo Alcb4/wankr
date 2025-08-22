@@ -69,6 +69,7 @@ export const components = {
   button: {
     primary: 'bg-gradient-cta text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105',
     secondary: 'border border-white text-white px-6 py-3 rounded-xl font-semibold hover:bg-muted/80 transition-all duration-300',
+    accent: 'bg-gradient-to-r from-accent to-secondary text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 hover:scale-105',
     outline: 'border border-cyber text-cyber px-6 py-3 rounded-xl font-semibold hover:bg-cyber hover:text-white transition-all duration-300',
     danger: 'bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-semibold hover:bg-destructive/90 transition-all duration-300',
     disabled: 'opacity-60 cursor-not-allowed hover:scale-100',
