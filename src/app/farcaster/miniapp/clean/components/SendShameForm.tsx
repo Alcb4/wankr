@@ -45,11 +45,8 @@ export function SendShameForm({ targetAddress }: SendShameFormProps) {
         showSuccess(`Shame sent! ${amount} WANKR (Farcaster integration ready)`)
         setMessage('')
         
-        // Send notification to user
-        await sdk.actions.sendNotification({
-          title: 'Shame Sent!',
-          body: `Successfully sent ${amount} WANKR shame`,
-        })
+        // Note: Farcaster notifications would be implemented here
+        // when the SDK notification API is available
         
       } catch (sdkError) {
         console.log('Farcaster SDK not available, using fallback API')
