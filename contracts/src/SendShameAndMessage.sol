@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
@@ -32,13 +33,14 @@ contract SendShameAndMessage is Ownable {
         string topic,
         uint256 timestamp
     );
-    
+
     // Custom errors for gas efficiency
     error InsufficientAllowance();
     error InsufficientBalance();
     error InvalidAmount();
     error InvalidAddress();
     error MessageTooLong();
+    error PermitInvalid();
 
     // Constants
     uint256 public constant MAX_MESSAGE_LENGTH = 500; // Maximum message length
@@ -99,6 +101,62 @@ contract SendShameAndMessage is Ownable {
         
         // If we reach here, both operations succeeded
         emit ShameSent(from, to, amount, message, topic, block.timestamp);
+    }
+
+    /**
+     * @dev Gasless function using EIP-2612 permit
+     * @param to Recipient address
+     * @param amount Amount of WANKR to send (in wei)
+     * @param message Message to send via Net Protocol
+     * @param topic Topic for the Net Protocol message
+     * @param deadline Permit deadline
+     * @param v Permit signature v
+     * @param r Permit signature r
+     * @param s Permit signature s
+     */
+    function sendShameAndMessageWithPermit(
+        address to,
+        uint256 amount,
+        string calldata message,
+        string calldata topic,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        // Input validation
+        if (to == address(0)) revert InvalidAddress();
+        if (amount < MIN_SHAME_AMOUNT * 1e18) revert InvalidAmount();
+        if (amount > MAX_SHAME_AMOUNT * 1e18) revert InvalidAmount();
+        if (bytes(message).length > MAX_MESSAGE_LENGTH) revert MessageTooLong();
+        if (bytes(message).length == 0) revert MessageTooLong();
+        if (deadline < block.timestamp) revert PermitInvalid();
+
+        address from = msg.sender;
+
+        // Use permit to approve this contract
+        try IERC20Permit(address(wankrToken)).permit(
+            from,
+            address(this),
+            amount,
+            deadline,
+            v,
+            r,
+            s
+        ) {
+            // Permit successful, now check balance and proceed
+            uint256 balance = wankrToken.balanceOf(from);
+            if (balance < amount) revert InsufficientBalance();
+
+            // Atomic transaction: both operations must succeed or both fail
+            wankrToken.transferFrom(from, to, amount);
+            _sendNetProtocolMessage(message, topic);
+            
+            // If we reach here, both operations succeeded
+            emit ShameSent(from, to, amount, message, topic, block.timestamp);
+        } catch {
+            revert PermitInvalid();
+        }
     }
 
     /**

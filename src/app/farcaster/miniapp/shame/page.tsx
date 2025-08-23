@@ -2,40 +2,61 @@
 
 "use client"
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ethers } from 'ethers'
-import { useAccount, useConnect, useDisconnect } from 'wagmi'
 // Reuse existing components and config
 import { showError, showSuccess } from '../../../utils/ui'
-import { FarcasterMiniAppService } from '../../../services/farcasterMiniAppService'
+
+interface FrameContext {
+  targetAddress?: string
+  targetHandle?: string
+  postId?: string
+  castId?: string
+  authorFid?: string
+  context?: 'frame' | 'standalone'
+}
 
 function FarcasterShameMiniAppContent() {
   const searchParams = useSearchParams()
-  const targetAddress = searchParams.get('target')
-  const postId = searchParams.get('postId')
+  
+  // Extract all context parameters using useMemo to prevent unnecessary re-renders
+  const frameContext: FrameContext = useMemo(() => ({
+    targetAddress: searchParams.get('target') || undefined,
+    targetHandle: searchParams.get('handle') || undefined,
+    postId: searchParams.get('postId') || undefined,
+    castId: searchParams.get('castId') || undefined,
+    authorFid: searchParams.get('authorFid') || undefined,
+    context: (searchParams.get('context') as 'frame' | 'standalone') || 'standalone'
+  }), [searchParams])
   
   const [isConnected, setIsConnected] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [amount, setAmount] = useState(5)
   const [message, setMessage] = useState('')
   const [address, setAddress] = useState<string | null>(null)
+  const [targetDisplay, setTargetDisplay] = useState<string>('')
 
-  
   useEffect(() => {
     // Auto-connect for Farcaster Mini App
-    if (targetAddress) {
-      console.log('Quick shame Mini App loaded with target:', targetAddress)
+    if (frameContext.targetAddress || frameContext.targetHandle) {
+      console.log('Quick shame Mini App loaded with context:', frameContext)
+      
+      // Set target display
+      if (frameContext.targetHandle) {
+        setTargetDisplay(`@${frameContext.targetHandle}`)
+      } else if (frameContext.targetAddress) {
+        setTargetDisplay(frameContext.targetAddress)
+      }
     }
     
     // Simulate Farcaster wallet connection
     // In real implementation, this would come from Farcaster's embedded wallet
     setIsConnected(true)
     setAddress('0x1234567890123456789012345678901234567890') // Placeholder
-  }, [targetAddress])
+  }, [frameContext])
 
   const handleQuickShame = async (amount: number, message: string) => {
-    if (!address || !targetAddress) {
+    if (!address || (!frameContext.targetAddress && !frameContext.targetHandle)) {
       showError('Wallet not connected or target not found')
       return
     }
@@ -46,9 +67,13 @@ function FarcasterShameMiniAppContent() {
       // For now, we'll use a placeholder since we need to implement proper Farcaster wallet integration
       // This will be replaced with actual Farcaster Mini App transaction flow
       showSuccess('Quick shame functionality ready! (Farcaster wallet integration to be implemented)')
-      console.log('Quick shame request:', { targetAddress, amount, message })
-      
-
+      console.log('Quick shame request:', { 
+        frameContext,
+        amount, 
+        message,
+        targetAddress: frameContext.targetAddress,
+        targetHandle: frameContext.targetHandle
+      })
       
     } catch (error) {
       console.error('Quick shame error:', error)
@@ -64,7 +89,9 @@ function FarcasterShameMiniAppContent() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-primary">WANKR Quick Shame</h1>
-          <p className="text-muted-foreground">Send shame from Farcaster</p>
+          <p className="text-muted-foreground">
+            {frameContext.context === 'frame' ? 'Send shame from Farcaster Frame' : 'Send shame from Farcaster'}
+          </p>
         </div>
 
         {/* Connection Status */}
@@ -83,10 +110,15 @@ function FarcasterShameMiniAppContent() {
         </div>
 
         {/* Target Info */}
-        {targetAddress && (
+        {targetDisplay && (
           <div className="mb-4 p-3 rounded-lg border border-border">
             <p className="text-sm text-muted-foreground">Target:</p>
-            <p className="font-mono text-sm break-all">{targetAddress}</p>
+            <p className="font-mono text-sm break-all">{targetDisplay}</p>
+            {frameContext.context === 'frame' && frameContext.postId && (
+              <p className="text-xs text-muted-foreground mt-1">
+                From post: {frameContext.postId}
+              </p>
+            )}
           </div>
         )}
 
@@ -96,6 +128,7 @@ function FarcasterShameMiniAppContent() {
             <label className="block text-sm font-medium mb-2">Shame Amount (WANKR)</label>
             <select 
               className="w-full p-2 border border-border rounded-md bg-background"
+              value={amount}
               onChange={(e) => setAmount(parseInt(e.target.value))}
             >
               <option value={1}>1 WANKR</option>
@@ -111,6 +144,7 @@ function FarcasterShameMiniAppContent() {
               className="w-full p-2 border border-border rounded-md bg-background resize-none"
               rows={3}
               placeholder="Quick shame message..."
+              value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
           </div>
@@ -127,7 +161,7 @@ function FarcasterShameMiniAppContent() {
         {/* Link to Full App */}
         <div className="mt-6 text-center">
           <a 
-            href={`/farcaster/miniapp?target=${targetAddress}`}
+            href={`/farcaster/miniapp?target=${frameContext.targetAddress}&handle=${frameContext.targetHandle}`}
             className="text-sm text-primary hover:underline"
           >
             Open Full WANKR App →

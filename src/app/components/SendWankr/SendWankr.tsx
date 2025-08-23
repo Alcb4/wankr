@@ -13,9 +13,13 @@ import type { SendShameForm } from '../../config/types'
 import { showError, showSuccess } from '../../utils/ui'
 import { WANKR_CONTRACT_ADDRESS, WANKR_ABI, SEND_SHAME_AND_MESSAGE_ADDRESS, SEND_SHAME_AND_MESSAGE_ABI, HELPER_CONTRACT_CONSTANTS } from '../../config/contract'
 
-export function SendWankr() {
+interface SendWankrProps {
+  initialTarget?: string
+}
+
+export function SendWankr({ initialTarget }: SendWankrProps = {}) {
   const [formData, setFormData] = useState<SendShameForm>({
-    targetAddress: '',
+    targetAddress: initialTarget || '',
     reason: '',
     amount: 5 // Default to middle amount
   })
@@ -29,6 +33,44 @@ export function SendWankr() {
     data: `0x${string}`
     value?: bigint
   }>>([])
+
+  // Auto-resolve target if provided from Frame context
+  useEffect(() => {
+    if (initialTarget && !resolvedAddress) {
+      console.log('Auto-resolving initial target:', initialTarget)
+      // Try to auto-resolve the target
+      handleAutoResolve(initialTarget)
+    }
+  }, [initialTarget, resolvedAddress])
+
+  const handleAutoResolve = async (target: string) => {
+    if (!target.trim()) return
+
+    try {
+      setIsResolving(true)
+      console.log(`🔍 Auto-resolving target: ${target}`)
+      
+      // Try different platforms for resolution
+      const platforms: ResolutionPlatform[] = ['farcaster', 'basenames', 'wallet']
+      
+      for (const platform of platforms) {
+        try {
+          const resolution = await addressResolutionService.resolveHandle(target, platform)
+          setResolvedAddress(resolution.address)
+          setSelectedPlatform(platform)
+          console.log(`✅ Auto-resolved to: ${resolution.address} (${resolution.displayName}) via ${platform}`)
+          break
+        } catch (error) {
+          console.log(`❌ Auto-resolve failed for ${platform}:`, error)
+          continue
+        }
+      }
+    } catch (error) {
+      console.error('❌ Auto-resolve failed:', error)
+    } finally {
+      setIsResolving(false)
+    }
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target

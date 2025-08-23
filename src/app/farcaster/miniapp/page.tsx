@@ -2,32 +2,58 @@
 
 "use client"
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 // Reuse existing components and config
 import { SendWankr } from '../../components/SendWankr/SendWankr'
 import { ShameFeed } from '../../components/ShameFeed/ShameFeed'
 
+interface FrameContext {
+  targetAddress?: string
+  targetHandle?: string
+  postId?: string
+  castId?: string
+  authorFid?: string
+  context?: 'frame' | 'standalone'
+}
+
 function FarcasterMiniAppContent() {
   const searchParams = useSearchParams()
-  const targetAddress = searchParams.get('target')
+  
+  // Extract all context parameters using useMemo to prevent unnecessary re-renders
+  const frameContext: FrameContext = useMemo(() => ({
+    targetAddress: searchParams.get('target') || undefined,
+    targetHandle: searchParams.get('handle') || undefined,
+    postId: searchParams.get('postId') || undefined,
+    castId: searchParams.get('castId') || undefined,
+    authorFid: searchParams.get('authorFid') || undefined,
+    context: (searchParams.get('context') as 'frame' | 'standalone') || 'standalone'
+  }), [searchParams])
   
   const [activeTab, setActiveTab] = useState<'send' | 'feed' | 'analytics'>('send')
   const [isConnected, setIsConnected] = useState(false)
   const [address, setAddress] = useState<string | null>(null)
+  const [targetDisplay, setTargetDisplay] = useState<string>('')
   
   useEffect(() => {
     // Auto-connect for Farcaster Mini App
-    if (targetAddress) {
-      console.log('Farcaster Mini App loaded with target:', targetAddress)
+    if (frameContext.targetAddress || frameContext.targetHandle) {
+      console.log('Farcaster Mini App loaded with context:', frameContext)
+      
+      // Set target display
+      if (frameContext.targetHandle) {
+        setTargetDisplay(`@${frameContext.targetHandle}`)
+      } else if (frameContext.targetAddress) {
+        setTargetDisplay(frameContext.targetAddress)
+      }
     }
     
     // Simulate Farcaster wallet connection
     // In real implementation, this would come from Farcaster's embedded wallet
     setIsConnected(true)
     setAddress('0x1234567890123456789012345678901234567890') // Placeholder
-  }, [targetAddress])
+  }, [frameContext])
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -35,7 +61,9 @@ function FarcasterMiniAppContent() {
       <div className="bg-primary text-primary-foreground p-4">
         <div className="max-w-md mx-auto">
           <h1 className="text-xl font-bold">WANKR App</h1>
-          <p className="text-sm opacity-90">Shame management & verification</p>
+          <p className="text-sm opacity-90">
+            {frameContext.context === 'frame' ? 'Shame management from Frame' : 'Shame management & verification'}
+          </p>
         </div>
       </div>
 
@@ -98,14 +126,21 @@ function FarcasterMiniAppContent() {
           {activeTab === 'send' && (
             <div>
               <h2 className="text-lg font-semibold mb-4">Send Shame</h2>
-              {targetAddress && (
+              {targetDisplay && (
                 <div className="mb-4 p-3 rounded-lg border border-border">
                   <p className="text-sm text-muted-foreground">Target:</p>
-                  <p className="font-mono text-sm break-all">{targetAddress}</p>
+                  <p className="font-mono text-sm break-all">{targetDisplay}</p>
+                  {frameContext.context === 'frame' && frameContext.postId && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      From post: {frameContext.postId}
+                    </p>
+                  )}
                 </div>
               )}
-              {/* Reuse existing SendWankr component */}
-              <SendWankr />
+              {/* Reuse existing SendWankr component with pre-filled target */}
+              <SendWankr 
+                initialTarget={frameContext.targetHandle || frameContext.targetAddress}
+              />
             </div>
           )}
 
