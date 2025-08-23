@@ -1,3 +1,5 @@
+// src/app/components/SendWankr/SendWankr.tsx
+
 "use client"
 
 import { useState, useEffect } from 'react'
@@ -9,7 +11,7 @@ import { addressResolutionService, type ResolutionPlatform } from '../../service
 import { getWankrAmountComment } from '../../utils/formatters'
 import type { SendShameForm } from '../../config/types'
 import { showError, showSuccess } from '../../utils/ui'
-import { WANKR_CONTRACT_ADDRESS, WANKR_ABI, NET_CONTRACT_ADDRESS } from '../../config/contract'
+import { WANKR_CONTRACT_ADDRESS, WANKR_ABI, SEND_SHAME_AND_MESSAGE_ADDRESS, SEND_SHAME_AND_MESSAGE_ABI, HELPER_CONTRACT_CONSTANTS } from '../../config/contract'
 
 export function SendWankr() {
   const [formData, setFormData] = useState<SendShameForm>({
@@ -149,54 +151,43 @@ export function SendWankr() {
       const hasReason = formData.reason.trim().length > 0
       const walletState = walletService.getWalletState()
 
-      // Prepare calls for OnchainKit Transaction component
-      const calls = []
+      // Check if user has approved the helper contract
+      const wankrContract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI, contractState.signer)
+      const allowance = await wankrContract.allowance(walletState.address, SEND_SHAME_AND_MESSAGE_ADDRESS)
+      const requiredAmount = ethers.parseUnits(HELPER_CONTRACT_CONSTANTS.RECOMMENDED_APPROVAL_AMOUNT.toString(), 18)
 
-      // Always add WANKR transfer call
-      const wankrInterface = new ethers.Interface(WANKR_ABI)
-      const wankrTransferData = wankrInterface.encodeFunctionData('transfer', [
-        targetAddress,
-        amountInWei
-      ])
-      
-      calls.push({
-        to: WANKR_CONTRACT_ADDRESS as `0x${string}`,
-        data: wankrTransferData as `0x${string}`,
-        value: BigInt(0)
-      })
-
-      // Add Net Protocol message call if reason provided
-      if (hasReason) {
-        const netMessage = `Shame delivered! ${walletState.address || 'Unknown'} sent ${formData.amount} WANKR to ${targetAddress} with reason: "${formData.reason}"`
-        const netData = JSON.stringify({
-          from: walletState.address,
-          to: targetAddress,
-          amount: formData.amount,
-          reason: formData.reason,
-          timestamp: Date.now()
-        })
-
-        const netInterface = new ethers.Interface([
-          'function sendMessage(string text, string topic, bytes data) external'
-        ])
-        const netMessageData = netInterface.encodeFunctionData('sendMessage', [
-          netMessage,
-          'wankr-shame',
-          ethers.toUtf8Bytes(netData)
-        ])
-
-        calls.push({
-          to: NET_CONTRACT_ADDRESS as `0x${string}`,
-          data: netMessageData as `0x${string}`,
-          value: BigInt(0)
-        })
+      if (allowance < amountInWei) {
+        // Need to approve first
+        console.log('🔐 Approval needed. Requesting approval...')
+        const approveTx = await wankrContract.approve(SEND_SHAME_AND_MESSAGE_ADDRESS, requiredAmount)
+        showSuccess('Approval transaction submitted. Please wait for confirmation...')
+        await approveTx.wait()
+        showSuccess('Approval confirmed! Now sending shame...')
       }
 
-      console.log('🚀 TRANSACTION PREPARED!')
-      console.log('Debug: Prepared calls for atomic transaction:', calls)
+      // Prepare call to helper contract
+      const helperInterface = new ethers.Interface(SEND_SHAME_AND_MESSAGE_ABI)
+      const message = hasReason ? formData.reason : 'Shame delivered!'
+      const topic = 'wankr-shame'
+      
+      const helperData = helperInterface.encodeFunctionData('sendShameAndMessage', [
+        targetAddress,
+        amountInWei,
+        message,
+        topic
+      ])
+
+      const calls = [{
+        to: SEND_SHAME_AND_MESSAGE_ADDRESS as `0x${string}`,
+        data: helperData as `0x${string}`,
+        value: BigInt(0)
+      }]
+
+      console.log('🚀 HELPER CONTRACT TRANSACTION PREPARED!')
+      console.log('Debug: Prepared call to helper contract:', calls)
       console.log('📊 Transaction breakdown:')
-      console.log(`   - WANKR Transfer: ${calls.length >= 1 ? '✅' : '❌'}`)
-      console.log(`   - Net Protocol Message: ${calls.length >= 2 ? '✅' : '❌'}`)
+      console.log(`   - Helper Contract Call: ✅`)
+      console.log(`   - Atomic WANKR Transfer + Message: ✅`)
       console.log(`   - Total calls: ${calls.length}`)
       setTransactionCalls(calls)
       setShowTransaction(true)

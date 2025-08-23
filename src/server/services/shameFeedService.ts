@@ -1,3 +1,5 @@
+// src/server/services/shameFeedService.ts
+
 import { ethers } from 'ethers';
 import { EventEmitter } from 'events';
 import { HandleResolutionService } from './handleResolutionService';
@@ -5,11 +7,19 @@ import { HandleResolutionService } from './handleResolutionService';
 // WANKR Contract Configuration
 const WANKR_CONTRACT_ADDRESS = '0xa207c6e67cea08641503947ac05c65748bb9bb07';
 
+// SendShameAndMessage Helper Contract Configuration
+const SEND_SHAME_AND_MESSAGE_ADDRESS = '0xD9627180377C5D5EBEEA727959b233cb30aC4002';
+
 // Contract ABI for events we need to monitor
 const WANKR_ABI = [
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'function getShameHistory() view returns (tuple(address from, address to, uint256 amount, uint256 timestamp, string reason)[])',
   'function getTopShameSoldiers() view returns (tuple(address soldier, uint256 totalShameDelivered, uint256 lastShameTime, uint256 rank)[])'
+];
+
+// Helper Contract ABI for monitoring
+const HELPER_CONTRACT_ABI = [
+  'event ShameSent(address indexed from, address indexed to, uint256 amount, string message, string topic, uint256 timestamp)'
 ];
 
 export interface ShameTransaction {
@@ -36,7 +46,8 @@ export interface ShameSoldier {
 
 export class ShameFeedService extends EventEmitter {
   private provider: ethers.JsonRpcProvider;
-  private contract: ethers.Contract;
+  private wankrContract: ethers.Contract;
+  private helperContract: ethers.Contract;
   private handleResolver: HandleResolutionService;
   private isMonitoring: boolean = false;
   private lastProcessedBlock: number = 0;
@@ -53,7 +64,8 @@ export class ShameFeedService extends EventEmitter {
   constructor(rpcUrl: string = 'https://mainnet.base.org', handleResolver?: HandleResolutionService) {
     super();
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
-    this.contract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI, this.provider);
+    this.wankrContract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI, this.provider);
+    this.helperContract = new ethers.Contract(SEND_SHAME_AND_MESSAGE_ADDRESS, HELPER_CONTRACT_ABI, this.provider);
     this.handleResolver = handleResolver || new HandleResolutionService();
   }
 
@@ -106,7 +118,7 @@ export class ShameFeedService extends EventEmitter {
       
       if (hasCustomFunctions) {
         // Load recent shame history
-        const history = await this.contract.getShameHistory();
+        const history = await this.wankrContract.getShameHistory();
         this.shameHistory = history.map((tx: { from: string; to: string; amount: bigint; timestamp: bigint; reason: string }) => ({
           from: tx.from,
           to: tx.to,
@@ -116,7 +128,7 @@ export class ShameFeedService extends EventEmitter {
         })).slice(-50); // Keep last 50 transactions
 
         // Load top shame soldiers
-        const soldiers = await this.contract.getTopShameSoldiers();
+        const soldiers = await this.wankrContract.getTopShameSoldiers();
         this.topSoldiers = soldiers.map((soldier: { soldier: string; totalShameDelivered: bigint; lastShameTime: bigint; rank: bigint }) => ({
           soldier: soldier.soldier,
           totalShameDelivered: ethers.formatUnits(soldier.totalShameDelivered, 18),
@@ -151,7 +163,7 @@ export class ShameFeedService extends EventEmitter {
   private async checkContractCapabilities(): Promise<boolean> {
     try {
       // Try to call a custom function to see if it exists
-      await this.contract.getShameHistory();
+      await this.wankrContract.getShameHistory();
       return true;
     } catch (_error) {
       return false;
@@ -409,7 +421,7 @@ export class ShameFeedService extends EventEmitter {
    */
   private async checkCustomTransactions() {
     try {
-      const history = await this.contract.getShameHistory();
+      const history = await this.wankrContract.getShameHistory();
       const newTransactions = history.filter((tx: { timestamp: bigint }) => 
         Number(tx.timestamp) > Math.floor(Date.now() / 1000) - 60 // Last minute
       );
@@ -517,7 +529,7 @@ export class ShameFeedService extends EventEmitter {
    */
   private async updateLeaderboard() {
     try {
-      const soldiers = await this.contract.getTopShameSoldiers();
+      const soldiers = await this.wankrContract.getTopShameSoldiers();
       this.topSoldiers = soldiers.map((soldier: { soldier: string; totalShameDelivered: bigint; lastShameTime: bigint; rank: bigint }) => ({
         soldier: soldier.soldier,
         totalShameDelivered: ethers.formatUnits(soldier.totalShameDelivered, 18),

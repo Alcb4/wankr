@@ -1,3 +1,5 @@
+// src/app/config/types.ts
+
 import { ethers } from 'ethers'
 
 // Wallet and Contract Types

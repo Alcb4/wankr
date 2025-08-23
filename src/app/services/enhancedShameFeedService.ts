@@ -1,3 +1,5 @@
+// src/app/services/enhancedShameFeedService.ts
+
 import { localStorageService } from './localStorageService'
 import { netProtocolCorrelationService } from './netProtocolCorrelationService'
 import type { ShameTransaction, ShameFeedData, ShameFeedStats } from '../types/shame-feed'

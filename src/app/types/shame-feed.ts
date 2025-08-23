@@ -1,3 +1,5 @@
+// src/app/types/shame-feed.ts
+
 export interface ShameTransaction {
   hash: string
   from: string
