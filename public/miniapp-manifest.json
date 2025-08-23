@@ -1,0 +1,54 @@
+{
+  "name": "WANKR Shame & Verification",
+  "shortName": "WANKR",
+  "description": "Send shame tokens and verify authenticity on Base blockchain. Track shame history for digital identity verification.",
+  "version": "1.0.0",
+  "author": {
+    "name": "WANKR Team",
+    "website": "https://wankr.xyz"
+  },
+  "category": "social",
+  "tags": ["shame", "verification", "social", "base", "blockchain"],
+  "icon": {
+    "url": "/favicon.svg",
+    "type": "image/svg+xml"
+  },
+  "screenshots": [
+    {
+      "url": "/screenshots/miniapp-send.jpg",
+      "type": "image/jpeg",
+      "description": "Send shame interface"
+    },
+    {
+      "url": "/screenshots/miniapp-analytics.jpg", 
+      "type": "image/jpeg",
+      "description": "Shame analytics and verification"
+    }
+  ],
+  "homeUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp/clean",
+  "embedUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp/clean",
+  "permissions": [
+    "user.read",
+    "wallet.ethereum",
+    "notifications.send"
+  ],
+  "supportedChains": [
+    {
+      "chainId": 8453,
+      "name": "Base"
+    }
+  ],
+  "features": [
+    "Send WANKR shame tokens",
+    "View shame analytics",
+    "Verify user authenticity",
+    "Track shame history",
+    "Blockchain-based verification"
+  ],
+  "privacyPolicy": "https://wankr.xyz/privacy",
+  "termsOfService": "https://wankr.xyz/terms",
+  "contact": {
+    "email": "support@wankr.xyz",
+    "twitter": "@wankr_xyz"
+  }
+}
