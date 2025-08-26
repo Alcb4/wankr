@@ -10,6 +10,9 @@ interface ShameStats {
   totalShames: number
   totalAmount: number
   averageAmount: number
+  shameScore: number
+  shameFreeStreak: number
+  uniqueShamers: number
   recentShames: Array<{
     from: string
     amount: number
@@ -23,6 +26,59 @@ export function ShameAnalytics({ targetAddress }: ShameAnalyticsProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Function to interpret shame score
+  const getShameScoreInfo = (score: number) => {
+    if (score === 0) {
+      return {
+        level: 'Pristine',
+        description: 'No shame received - clean reputation!',
+        color: 'text-green-500',
+        bgColor: 'bg-green-500/10',
+        emoji: '✨'
+      }
+    } else if (score <= 10) {
+      return {
+        level: 'Light',
+        description: 'Minimal shame - mostly clean',
+        color: 'text-green-400',
+        bgColor: 'bg-green-400/10',
+        emoji: '😊'
+      }
+    } else if (score <= 25) {
+      return {
+        level: 'Moderate',
+        description: 'Some shame - watch out',
+        color: 'text-yellow-500',
+        bgColor: 'bg-yellow-500/10',
+        emoji: '⚠️'
+      }
+    } else if (score <= 50) {
+      return {
+        level: 'High',
+        description: 'Significant shame - concerning',
+        color: 'text-orange-500',
+        bgColor: 'bg-orange-500/10',
+        emoji: '😬'
+      }
+    } else if (score <= 75) {
+      return {
+        level: 'Very High',
+        description: 'Heavy shame - major red flags',
+        color: 'text-red-500',
+        bgColor: 'bg-red-500/10',
+        emoji: '🚨'
+      }
+    } else {
+      return {
+        level: 'Extreme',
+        description: 'Maximum shame - avoid at all costs',
+        color: 'text-red-600',
+        bgColor: 'bg-red-600/10',
+        emoji: '💀'
+      }
+    }
+  }
+
   useEffect(() => {
     if (!targetAddress) return
 
@@ -30,30 +86,26 @@ export function ShameAnalytics({ targetAddress }: ShameAnalyticsProps) {
       try {
         setLoading(true)
         
-        // Use existing shame feed API to get data
-        const response = await fetch('/api/shame-feed')
+        // Use our new user stats API for faster loading
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+        
+        const response = await fetch(`/api/user-stats/${targetAddress}`, {
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
         if (response.ok) {
           const data = await response.json()
           
-          // Filter for target address and calculate stats
-          const targetShames = data.shames?.filter((shame: { to?: string; amount?: number; from?: string; message?: string; timestamp?: string }) => 
-            shame.to?.toLowerCase() === targetAddress.toLowerCase()
-          ) || []
-
-          const totalShames = targetShames.length
-          const totalAmount = targetShames.reduce((sum: number, shame: { amount?: number }) => sum + (shame.amount || 0), 0)
-          const averageAmount = totalShames > 0 ? totalAmount / totalShames : 0
-
           setStats({
-            totalShames,
-            totalAmount,
-            averageAmount,
-            recentShames: targetShames.slice(0, 5).map((shame: { from?: string; amount?: number; message?: string; timestamp?: string }) => ({
-              from: shame.from || 'Unknown',
-              amount: shame.amount || 0,
-              message: shame.message || '',
-              timestamp: shame.timestamp || new Date().toISOString()
-            }))
+            totalShames: data.totalShamesReceived || 0,
+            totalAmount: data.wankrReceived || 0,
+            averageAmount: data.totalShamesReceived > 0 ? (data.wankrReceived / data.totalShamesReceived) : 0,
+            shameScore: data.shameScore || 0,
+            shameFreeStreak: data.shameFreeStreak || 0,
+            uniqueShamers: data.uniqueShamers || 0,
+            recentShames: [] // We'll add this later if needed
           })
         } else {
           setError('Failed to load analytics')
@@ -102,9 +154,22 @@ export function ShameAnalytics({ targetAddress }: ShameAnalyticsProps) {
     )
   }
 
+  const scoreInfo = getShameScoreInfo(stats.shameScore)
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Shame Analytics</h2>
+      
+      {/* Shame Score Card */}
+      <div className={`p-4 rounded-lg border ${scoreInfo.bgColor} ${scoreInfo.color}`}>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold">Shame Score</h3>
+          <span className="text-2xl">{scoreInfo.emoji}</span>
+        </div>
+        <div className="text-3xl font-bold mb-2">{stats.shameScore}/100</div>
+        <div className="text-sm font-medium mb-2">{scoreInfo.level}</div>
+        <p className="text-sm opacity-90">{scoreInfo.description}</p>
+      </div>
       
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-3">
@@ -119,6 +184,18 @@ export function ShameAnalytics({ targetAddress }: ShameAnalyticsProps) {
         <div className="p-3 bg-muted rounded-lg text-center">
           <div className="text-2xl font-bold text-primary">{stats.averageAmount.toFixed(1)}</div>
           <div className="text-xs text-muted-foreground">Avg Amount</div>
+        </div>
+      </div>
+
+      {/* Additional Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="p-3 bg-muted rounded-lg text-center">
+          <div className="text-lg font-bold text-primary">{stats.uniqueShamers}</div>
+          <div className="text-xs text-muted-foreground">Unique Shamers</div>
+        </div>
+        <div className="p-3 bg-muted rounded-lg text-center">
+          <div className="text-lg font-bold text-primary">{stats.shameFreeStreak}</div>
+          <div className="text-xs text-muted-foreground">Shame-Free Days</div>
         </div>
       </div>
 

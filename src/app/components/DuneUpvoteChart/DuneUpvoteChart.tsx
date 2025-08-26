@@ -23,6 +23,9 @@ export function DuneUpvoteChart({
   // Initialize dimensions to 0 to prevent layout shift
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   
+  // Get the global maximum upvotes for proper scaling (from quick stats)
+  const [globalMaxUpvotes, setGlobalMaxUpvotes] = useState(0)
+  
   // Calculate date range based on selected time range
   const { calculatedStartDate, calculatedEndDate } = useMemo(() => {
     const now = new Date()
@@ -64,6 +67,17 @@ export function DuneUpvoteChart({
     endDate: calculatedEndDate,
     autoRefresh: false
   })
+
+  // Fetch global max upvotes for proper chart scaling
+  useEffect(() => {
+    fetch('/api/quick-stats')
+      .then(res => res.json())
+      .then(data => {
+        setGlobalMaxUpvotes(data.totalUpvotes)
+        console.log(`📊 Global max upvotes for chart scaling: ${data.totalUpvotes.toLocaleString()}`)
+      })
+      .catch(err => console.error('Failed to fetch global max upvotes:', err))
+  }, [])
 
   // Responsive sizing with ResizeObserver
   useEffect(() => {
@@ -176,8 +190,9 @@ export function DuneUpvoteChart({
     
     const upvotes = matchedData.map(d => d.total_upvotes)
     const holders = matchedData.map(d => d.unique_holders)
-    const minUpvotes = Math.min(...upvotes)
-    const maxUpvotes = Math.max(...upvotes)
+    
+    const minUpvotes = 0 // Always start from 0 for better visualization
+    const maxUpvotes = globalMaxUpvotes > 0 ? globalMaxUpvotes : Math.max(...upvotes)
     const minHolders = Math.min(...holders)
     const maxHolders = Math.max(...holders)
     
@@ -230,7 +245,7 @@ export function DuneUpvoteChart({
       matchedData,
       maxDataPoints
     }
-  }, [aggregateData, holdersData, dimensions])
+  }, [aggregateData, holdersData, dimensions, globalMaxUpvotes])
 
   const loading = upvoteLoading || holdersLoading
   const error = upvoteError || holdersError
@@ -408,7 +423,8 @@ export function DuneUpvoteChart({
         {/* Left Y-axis Labels - Upvotes */}
         {Array.from({ length: 6 }, (_, i) => {
           const y = chartData.padding + (i / 5) * chartData.chartHeight
-          const maxValue = Math.ceil(chartData.maxUpvotes / 200000) * 200000
+          // Use global max upvotes for proper scale, fallback to local max if global not available
+          const maxValue = globalMaxUpvotes > 0 ? globalMaxUpvotes : Math.ceil(chartData.maxUpvotes / 200000) * 200000
           const value = Math.round((maxValue - (i / 5) * maxValue))
           const displayValue = value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : 
                               value >= 1000 ? `${(value / 1000).toFixed(0)}k` : 

@@ -38,15 +38,17 @@ export function Leaderboard() {
             variant={activeTab === 'received' ? 'default' : 'secondary'}
             size="sm"
             onClick={() => setActiveTab('received')}
+            className={activeTab === 'received' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}
           >
-            Top $WANKR&apos;s
+            📉 Biggest Wankrs
           </Button>
           <Button
             variant={activeTab === 'sent' ? 'default' : 'secondary'}
             size="sm"
             onClick={() => setActiveTab('sent')}
+            className={activeTab === 'sent' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
           >
-            Shame Soldiers
+            📈 Top Shame Soldiers
           </Button>
         </div>
 

@@ -1,4 +1,4 @@
-import { DuneService, DuneRawEntry } from './duneService';
+import { DuneService, DuneRawEntry, DuneRawData } from './duneService';
 import { HandleResolutionService, HandleResolution } from './handleResolutionService';
 
 export interface LeaderboardEntry {
@@ -44,12 +44,18 @@ export class LeaderboardService {
   /**
    * Get both leaderboards at once
    */
-  async getLeaderboards(_period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardData> {
+  async getLeaderboards(period: 'all' | 'week' | 'day' = 'all'): Promise<LeaderboardData> {
     try {
-      console.log('🏆 Starting leaderboard generation...');
+      console.log(`🏆 Starting ${period} leaderboard generation...`);
       
-      // Get raw data from Dune (no handle resolution)
-      const rawData = await this.duneService.getRawLeaderboards();
+      // Get raw data from Dune based on period
+      let rawData: DuneRawData;
+      if (period === 'all') {
+        rawData = await this.duneService.getRawLeaderboards();
+      } else {
+        rawData = await this.duneService.getTimeBasedLeaderboards(period);
+      }
+      
       console.log(`📊 Got raw data: ${rawData.received.length} received, ${rawData.sent.length} sent`);
       
       // Extract all unique addresses
@@ -64,14 +70,14 @@ export class LeaderboardService {
       console.log(`✅ Resolved ${Object.keys(resolutions).length} addresses`);
       
       // Convert raw entries to leaderboard entries with resolved names
-      const received = rawData.received.map(entry => this.rawToLeaderboardEntry(entry, resolutions, 'all'));
-      const sent = rawData.sent.map(entry => this.rawToLeaderboardEntry(entry, resolutions, 'all'));
+      const received = rawData.received.map(entry => this.rawToLeaderboardEntry(entry, resolutions, period));
+      const sent = rawData.sent.map(entry => this.rawToLeaderboardEntry(entry, resolutions, period));
       
-      console.log(`🏆 Generated leaderboards: ${received.length} received, ${sent.length} sent`);
+      console.log(`🏆 Generated ${period} leaderboards: ${received.length} received, ${sent.length} sent`);
       
       return { received, sent };
     } catch (error) {
-      console.error('Error getting leaderboards:', error);
+      console.error(`Error getting ${period} leaderboards:`, error);
       return { received: [], sent: [] };
     }
   }

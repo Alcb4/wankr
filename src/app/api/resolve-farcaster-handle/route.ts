@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     console.log('Neynar API key check:', {
       hasKey: !!neynarApiKey,
       keyLength: neynarApiKey?.length || 0,
-      keyPrefix: neynarApiKey?.substring(0, 8) + '...' || 'none'
+      keyPrefix: neynarApiKey ? neynarApiKey.substring(0, 4) + '****' : 'none'
     })
     
     if (!neynarApiKey) {
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
           statusText: response.statusText,
           url: response.url,
           hasApiKey: !!neynarApiKey,
-          apiKeyLength: neynarApiKey?.length || 0
+          apiKeyConfigured: !!neynarApiKey
         })
         
         if (response.status === 404) {

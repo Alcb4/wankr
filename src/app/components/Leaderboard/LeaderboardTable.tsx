@@ -47,8 +47,21 @@ export function LeaderboardTable({ entries, isLoading }: LeaderboardTableProps) 
             <tr key={entry.address} className="transition-colors hover:bg-card/30">
               <td className="p-3 font-bold text-primary">#{entry.rank}</td>
               <td className="p-3">
-                <div className="font-medium text-foreground">{entry.displayName}</div>
-                <div className="text-xs capitalize text-muted-foreground">{entry.source}</div>
+                <div className="flex items-center gap-2">
+                  <div className="font-medium text-foreground">{entry.displayName}</div>
+                  {entry.source !== 'shortened' && (
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                      entry.source === 'farcaster' 
+                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                        : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                    }`}>
+                      {entry.source === 'farcaster' ? 'FC' : 'BN'}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground font-mono mt-1">
+                  {entry.address.slice(0, 6)}...{entry.address.slice(-4)}
+                </div>
               </td>
               <td className="p-3 text-sm text-muted-foreground">{formatNumber(entry.transactionCount)} tx</td>
               <td className="p-3 font-semibold text-primary">{formatNumber(parseFloat(entry.totalWankr))} WANKR</td>

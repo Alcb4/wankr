@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { ethers } from 'ethers'
 import { Transaction, TransactionButton, type LifecycleStatus } from '@coinbase/onchainkit/transaction'
 import { walletService } from '../../services/walletService'
-import { addressResolutionService, type ResolutionPlatform } from '../../services/addressResolutionService'
+import { addressResolutionService } from '../../services/addressResolutionService'
 
 import { getWankrAmountComment } from '../../utils/formatters'
 import type { SendShameForm } from '../../config/types'
@@ -15,15 +15,15 @@ import { WANKR_CONTRACT_ADDRESS, WANKR_ABI, SEND_SHAME_AND_MESSAGE_ADDRESS, SEND
 
 interface SendWankrProps {
   initialTarget?: string
+  resolutionMode?: 'farcaster-only' | 'all-options' // New prop to control resolution options
 }
 
-export function SendWankr({ initialTarget }: SendWankrProps = {}) {
+export function SendWankr({ initialTarget, resolutionMode = 'all-options' }: SendWankrProps = {}) {
   const [formData, setFormData] = useState<SendShameForm>({
     targetAddress: initialTarget || '',
     reason: '',
     amount: 5 // Default to middle amount
   })
-  const [selectedPlatform, setSelectedPlatform] = useState<ResolutionPlatform>('wallet')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResolving, setIsResolving] = useState(false)
   const [resolvedAddress, setResolvedAddress] = useState<string>('')
@@ -50,19 +50,17 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
       setIsResolving(true)
       console.log(`🔍 Auto-resolving target: ${target}`)
       
-      // Try different platforms for resolution
-      const platforms: ResolutionPlatform[] = ['farcaster', 'basenames', 'wallet']
-      
-      for (const platform of platforms) {
-        try {
-          const resolution = await addressResolutionService.resolveHandle(target, platform)
-          setResolvedAddress(resolution.address)
-          setSelectedPlatform(platform)
-          console.log(`✅ Auto-resolved to: ${resolution.address} (${resolution.displayName}) via ${platform}`)
-          break
-        } catch (error) {
-          console.log(`❌ Auto-resolve failed for ${platform}:`, error)
-          continue
+      // Only use Farcaster resolution for Mini App
+      try {
+        const resolution = await addressResolutionService.resolveHandle(target, 'farcaster')
+        setResolvedAddress(resolution.address)
+        console.log(`✅ Auto-resolved to: ${resolution.address} (${resolution.displayName}) via farcaster`)
+      } catch (error) {
+        console.log(`❌ Auto-resolve failed for farcaster:`, error)
+        // If Farcaster resolution fails, try to use as direct address
+        if (target.startsWith('0x') && target.length === 42) {
+          setResolvedAddress(target)
+          console.log(`✅ Using as direct address: ${target}`)
         }
       }
     } catch (error) {
@@ -84,24 +82,44 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
     }
   }
 
-  const handlePlatformChange = (platform: ResolutionPlatform) => {
-    setSelectedPlatform(platform)
-    setResolvedAddress('')
-  }
-
-  const resolveHandle = async () => {
+  const resolveWithPlatform = async (platform: 'wallet' | 'basenames' | 'farcaster' | 'x') => {
     if (!formData.targetAddress.trim()) {
-      showError('Please enter a target address or handle')
+      showError('Please enter a handle or address')
       return
     }
 
     try {
       setIsResolving(true)
-      console.log(`🔍 Resolving ${selectedPlatform} handle: ${formData.targetAddress}`)
+      console.log(`🔍 Resolving with platform ${platform}: ${formData.targetAddress}`)
       
       const resolution = await addressResolutionService.resolveHandle(
         formData.targetAddress, 
-        selectedPlatform
+        platform
+      )
+      
+      setResolvedAddress(resolution.address)
+      showSuccess(`Resolved to ${resolution.displayName} via ${platform}`)
+    } catch (error) {
+      console.error(`❌ Resolution failed for ${platform}:`, error)
+      showError(`Failed to resolve via ${platform}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setIsResolving(false)
+    }
+  }
+
+  const resolveHandle = async () => {
+    if (!formData.targetAddress.trim()) {
+      showError('Please enter a Farcaster handle')
+      return
+    }
+
+    try {
+      setIsResolving(true)
+      console.log(`🔍 Resolving Farcaster handle: ${formData.targetAddress}`)
+      
+      const resolution = await addressResolutionService.resolveHandle(
+        formData.targetAddress, 
+        'farcaster'
       )
       
       setResolvedAddress(resolution.address)
@@ -111,7 +129,7 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
       
     } catch (error) {
       console.error('❌ Handle resolution failed:', error)
-      showError(error instanceof Error ? error.message : 'Failed to resolve handle')
+      showError(error instanceof Error ? error.message : 'Failed to resolve Farcaster handle')
       setResolvedAddress('')
     } finally {
       setIsResolving(false)
@@ -150,7 +168,7 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
 
   const prepareTransaction = async () => {
     if (!formData.targetAddress.trim()) {
-      showError('Please enter a target address or handle')
+      showError('Please enter a Farcaster handle')
       return
     }
 
@@ -177,14 +195,14 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
           console.log('Debug: Resolving address...')
           const resolution = await addressResolutionService.resolveHandle(
             formData.targetAddress, 
-            selectedPlatform
+            'farcaster'
           )
           targetAddress = resolution.address
           setResolvedAddress(targetAddress)
           console.log('Debug: Address resolved to:', targetAddress)
         } catch (error) {
           console.error('Debug: Address resolution failed:', error)
-          showError(error instanceof Error ? error.message : 'Failed to resolve address')
+          showError(error instanceof Error ? error.message : 'Failed to resolve Farcaster handle')
           return
         }
       }
@@ -386,55 +404,6 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
       <form onSubmit={handleSubmit} className="space-y-2">
         {/* Target Address Input */}
         <div>
-          
-          {/* Platform Selection Buttons */}
-          <div className="grid grid-cols-4 gap-1 mb-2">
-            <button
-              type="button"
-              onClick={() => handlePlatformChange('wallet')}
-              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
-                selectedPlatform === 'wallet'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
-              }`}
-            >
-              Wallet
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePlatformChange('basenames')}
-              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
-                selectedPlatform === 'basenames'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
-              }`}
-            >
-              Base Names
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePlatformChange('farcaster')}
-              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
-                selectedPlatform === 'farcaster'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
-              }`}
-            >
-              Farcaster
-            </button>
-            <button
-              type="button"
-              onClick={() => handlePlatformChange('x')}
-              className={`px-2 py-1 text-xs font-medium rounded-lg transition-colors ${
-                selectedPlatform === 'x'
-                  ? 'bg-primary text-white shadow-lg'
-                  : 'text-muted-foreground hover:bg-muted/80 border border-border'
-              }`}
-            >
-              X (Twitter)
-            </button>
-          </div>
-
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
@@ -442,11 +411,9 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
               name="targetAddress"
               value={formData.targetAddress}
               onChange={handleInputChange}
-              placeholder={
-                selectedPlatform === 'wallet' ? 'To: Enter wallet address (0x...)' :
-                selectedPlatform === 'basenames' ? 'To: Enter Base Name (username.base.eth)' :
-                selectedPlatform === 'farcaster' ? 'To: Enter Farcaster handle (@username)' :
-                'To: Enter X handle (@username)'
+              placeholder={resolutionMode === 'farcaster-only' 
+                ? "To: Enter Farcaster handle (@username)"
+                : "To: Enter handle, wallet, or address"
               }
               className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               disabled={isSubmitting || isResolving}
@@ -460,6 +427,44 @@ export function SendWankr({ initialTarget }: SendWankrProps = {}) {
               {isResolving ? 'Resolving...' : 'Resolve'}
             </button>
           </div>
+          
+          {/* Resolution Options - Only show for web version */}
+          {resolutionMode === 'all-options' && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => resolveWithPlatform('wallet')}
+                disabled={!formData.targetAddress.trim() || isSubmitting || isResolving}
+                className="px-3 py-1 text-xs bg-muted text-muted-foreground rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Wallet
+              </button>
+              <button
+                type="button"
+                onClick={() => resolveWithPlatform('basenames')}
+                disabled={!formData.targetAddress.trim() || isSubmitting || isResolving}
+                className="px-3 py-1 text-xs bg-muted text-muted-foreground rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Base Names
+              </button>
+              <button
+                type="button"
+                onClick={() => resolveWithPlatform('farcaster')}
+                disabled={!formData.targetAddress.trim() || isSubmitting || isResolving}
+                className="px-3 py-1 text-xs bg-muted text-muted-foreground rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Farcaster
+              </button>
+              <button
+                type="button"
+                onClick={() => resolveWithPlatform('x')}
+                disabled={!formData.targetAddress.trim() || isSubmitting || isResolving}
+                className="px-3 py-1 text-xs bg-muted text-muted-foreground rounded-md hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Twitter/X
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Reason for Shame Input */}
