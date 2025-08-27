@@ -12,6 +12,9 @@ import { useFarcasterLeaderboard } from '../../hooks/useFarcasterLeaderboard'
 import { useUserStats } from '../../hooks/useUserStats'
 import { Send, User, Search, Trophy, BarChart3, TrendingUp, TrendingDown } from 'lucide-react'
 
+// Import Farcaster Mini App SDK
+import { sdk } from '@farcaster/miniapp-sdk'
+
 interface FrameContext {
   targetAddress?: string
   targetHandle?: string
@@ -59,6 +62,7 @@ function FarcasterMiniAppContent() {
   const [address, setAddress] = useState<string>('')
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [isAppReady, setIsAppReady] = useState(false)
   
   // Real user stats from on-chain data
   const { stats: realUserStats, isLoading: isLoadingRealStats, error: statsError, refreshStats } = useUserStats(address || null)
@@ -86,8 +90,48 @@ function FarcasterMiniAppContent() {
     refresh: refreshLeaderboard
   } = useFarcasterLeaderboard()
 
+  // FIXED: Initialize Farcaster Mini App and call ready()
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Initialize Farcaster wallet connection
+        const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' })
+        
+        if (accounts && accounts.length > 0) {
+          setIsConnected(true)
+          setAddress(accounts[0])
+          console.log('✅ Farcaster wallet connected:', accounts[0])
+        } else {
+          console.log('⚠️ No Farcaster wallet connected')
+          // For testing, use demo address
+          setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
+          setIsConnected(true)
+        }
+
+        // Call ready() to hide splash screen
+        await sdk.actions.ready()
+        setIsAppReady(true)
+        console.log('✅ Mini App ready - splash screen hidden')
+        
+      } catch (error) {
+        console.error('❌ Failed to initialize Mini App:', error)
+        // Still call ready() even if wallet connection fails
+        try {
+          await sdk.actions.ready()
+          setIsAppReady(true)
+        } catch (readyError) {
+          console.error('❌ Failed to call ready():', readyError)
+        }
+      }
+    }
+
+    initializeApp()
+  }, [])
+
   // FIXED: Show check-in immediately on app load, then load site data
   useEffect(() => {
+    if (!isAppReady) return // Wait for app to be ready
+
     const performAutoCheckIn = async () => {
       try {
         // Show check-in notification immediately
@@ -117,16 +161,17 @@ function FarcasterMiniAppContent() {
 
     // Perform check-in immediately when component mounts
     performAutoCheckIn()
-  }, []) // Removed dependency on realUserStats?.checkInStreak to prevent re-triggering
+  }, [isAppReady, realUserStats?.checkInStreak]) // Added isAppReady dependency
 
   // Load user profile in background
   const loadUserProfile = async () => {
+    if (!isAppReady) return // Wait for app to be ready
+    
     setIsLoadingProfile(true)
     try {
-      // For now, use a demo address until we have wallet connection
-      const demoAddress = '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6' // Example address
-      setAddress(demoAddress)
-      setIsConnected(true)
+      // Use connected address or demo address
+      const userAddress = address || '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      setAddress(userAddress)
       
       // Real data will be loaded via useUserStats hook
       // The hook will automatically fetch data when address is set
@@ -144,7 +189,7 @@ function FarcasterMiniAppContent() {
     }, 100) // Small delay to ensure check-in shows first
     
     return () => clearTimeout(timer)
-  }, [frameContext])
+  }, [frameContext, isAppReady, address])
 
   // Search functionality
   const handleSearch = async () => {
@@ -425,12 +470,12 @@ function FarcasterMiniAppContent() {
                   <button
                     onClick={handleSearch}
                     disabled={isSearching || !searchQuery.trim()}
-                    className="px-4 py-2 bg-gradient-to-r from-primary to-accent text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 shadow-md border-2 border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                    className="px-4 py-2 bg-gradient-to-r from-primary to-accent text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 shadow-md border-2 border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 min-w-[80px] flex items-center justify-center"
                   >
                     {isSearching ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        Searching...
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <span className="text-xs">...</span>
                       </div>
                     ) : (
                       'Search'
