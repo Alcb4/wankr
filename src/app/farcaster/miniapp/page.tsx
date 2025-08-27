@@ -86,10 +86,13 @@ function FarcasterMiniAppContent() {
     refresh: refreshLeaderboard
   } = useFarcasterLeaderboard()
 
-  // Auto check-in on app launch
+  // FIXED: Show check-in immediately on app load, then load site data
   useEffect(() => {
     const performAutoCheckIn = async () => {
       try {
+        // Show check-in notification immediately
+        setShowCheckInNotification(true)
+        
         // Simulate auto check-in
         await new Promise(resolve => setTimeout(resolve, 500))
         
@@ -99,7 +102,6 @@ function FarcasterMiniAppContent() {
         const streakInfo = verificationService.getStreakDayMessage(newStreak)
         
         setHasCheckedIn(true)
-        setShowCheckInNotification(true)
         
         // Store streak info for display
         setCurrentStreakInfo(streakInfo)
@@ -113,10 +115,11 @@ function FarcasterMiniAppContent() {
       }
     }
 
+    // Perform check-in immediately when component mounts
     performAutoCheckIn()
-  }, [userProfile?.checkInStreak])
+  }, []) // Removed dependency on realUserStats?.checkInStreak to prevent re-triggering
 
-  // Load user profile
+  // Load user profile in background
   const loadUserProfile = async () => {
     setIsLoadingProfile(true)
     try {
@@ -135,7 +138,12 @@ function FarcasterMiniAppContent() {
   }
 
   useEffect(() => {
-    loadUserProfile()
+    // Load profile data in background after check-in
+    const timer = setTimeout(() => {
+      loadUserProfile()
+    }, 100) // Small delay to ensure check-in shows first
+    
+    return () => clearTimeout(timer)
   }, [frameContext])
 
   // Search functionality
@@ -417,9 +425,16 @@ function FarcasterMiniAppContent() {
                   <button
                     onClick={handleSearch}
                     disabled={isSearching || !searchQuery.trim()}
-                    className="px-4 py-2 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg border border-primary/20"
+                    className="px-4 py-2 bg-gradient-to-r from-primary to-accent text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-300 shadow-md border-2 border-primary/30 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   >
-                    {isSearching ? '...' : 'Search'}
+                    {isSearching ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Searching...
+                      </div>
+                    ) : (
+                      'Search'
+                    )}
                   </button>
                 </div>
               </div>
@@ -480,7 +495,7 @@ function FarcasterMiniAppContent() {
                       setSendShameTarget(`@${searchResults.handle}`)
                       setActiveTab('send')
                     }}
-                    className="w-full py-3 bg-gradient-to-r from-primary to-accent text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-all duration-300 shadow-lg border border-primary/20 font-semibold"
+                    className="w-full py-3 bg-gradient-to-r from-primary to-accent text-white rounded-lg text-sm font-semibold hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-lg border-2 border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                   >
                     Send Shame to @{searchResults.handle}
                   </button>
