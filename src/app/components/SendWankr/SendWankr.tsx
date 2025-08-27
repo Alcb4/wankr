@@ -309,30 +309,43 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options', isFar
     const shameLabel = getWankrAmountComment(formData.amount.toString())
     showSuccess(`${shameLabel} shame delivered! Transaction: ${transactionHash}`)
     
-    // Store transaction in local storage immediately
-    const { enhancedShameFeedService } = await import('../../services/enhancedShameFeedService')
-    console.log('💾 Storing transaction in local storage:', {
-      hash: transactionHash,
-      from: walletService.getWalletState().address,
-      to: resolvedAddress,
-      amount: formData.amount,
-      message: formData.reason.trim() || undefined,
-      blockNumber
-    })
-    
-    try {
-      const stored = await enhancedShameFeedService.storeTransactionSuccess({
-        hash: transactionHash,
-        from: walletService.getWalletState().address || '',
-        to: resolvedAddress,
-        amount: formData.amount,
-        message: formData.reason.trim() || undefined,
-        blockNumber: Number(blockNumber) || 0
-      })
-      
-      console.log('✅ Transaction stored successfully:', stored)
-    } catch (error) {
-      console.error('❌ Failed to store transaction:', error)
+    // Store transaction in local storage immediately (skip for Mini App to avoid errors)
+    if (!isFarcasterMiniApp) {
+      try {
+        const { enhancedShameFeedService } = await import('../../services/enhancedShameFeedService')
+        
+        // Get sender address based on context
+        let senderAddress: string
+        if (isFarcasterMiniApp) {
+          senderAddress = farcasterAddress || ''
+        } else {
+          senderAddress = walletService.getWalletState().address || ''
+        }
+        
+        console.log('💾 Storing transaction in local storage:', {
+          hash: transactionHash,
+          from: senderAddress,
+          to: resolvedAddress,
+          amount: formData.amount,
+          message: formData.reason.trim() || undefined,
+          blockNumber
+        })
+        
+        const stored = await enhancedShameFeedService.storeTransactionSuccess({
+          hash: transactionHash,
+          from: senderAddress,
+          to: resolvedAddress,
+          amount: formData.amount,
+          message: formData.reason.trim() || undefined,
+          blockNumber: Number(blockNumber) || 0
+        })
+        
+        console.log('✅ Transaction stored successfully:', stored)
+      } catch (error) {
+        console.error('❌ Failed to store transaction:', error)
+      }
+    } else {
+      console.log('📱 Skipping transaction storage for Mini App context')
     }
     
     // Reset form
@@ -345,8 +358,16 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options', isFar
     setShowTransaction(false)
     setTransactionCalls([])
     
-    // Refresh shame feed
-    await refreshShameFeed()
+    // Refresh shame feed (skip for Mini App to avoid errors)
+    if (!isFarcasterMiniApp) {
+      try {
+        await refreshShameFeed()
+      } catch (error) {
+        console.error('❌ Failed to refresh shame feed:', error)
+      }
+    } else {
+      console.log('📱 Skipping shame feed refresh for Mini App context')
+    }
   }
 
   const handleTransactionError = (error: Error | { message?: string }) => {
@@ -407,13 +428,15 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options', isFar
 
 
 
-  // Test contract connection on mount only if wallet is connected
+  // Test contract connection on mount only if wallet is connected (web context only)
   useEffect(() => {
-    const contractState = walletService.getContractState()
-    if (contractState.contract) {
-      testContractConnection()
+    if (!isFarcasterMiniApp) {
+      const contractState = walletService.getContractState()
+      if (contractState.contract) {
+        testContractConnection()
+      }
     }
-  }, [])
+  }, [isFarcasterMiniApp])
 
   // Calculate button text based on whether there's a message
   const getButtonText = () => {
