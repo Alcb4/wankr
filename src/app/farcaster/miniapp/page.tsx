@@ -342,6 +342,8 @@ function FarcasterMiniAppContent() {
                 <SendWankr 
                   initialTarget={sendShameTarget || (frameContext.targetHandle ? `@${frameContext.targetHandle}` : frameContext.targetAddress)}
                   resolutionMode="farcaster-only"
+                  isFarcasterMiniApp={true}
+                  farcasterAddress={address}
                 />
               </div>
             </div>

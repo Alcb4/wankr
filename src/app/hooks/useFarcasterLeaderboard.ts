@@ -25,13 +25,20 @@ export function useFarcasterLeaderboard() {
       console.log(`🔍 Loading leaderboards for period: ${period}`)
       console.log(`🌐 API URL: ${API_BASE_URL}/leaderboards/${period}`)
       
+      // Detect if we're in a Mini App context
+      const isMiniApp = typeof window !== 'undefined' && window.location.href.includes('farcaster')
+      console.log(`📱 Mini App context detected: ${isMiniApp}`)
+      
       const response = await fetch(`${API_BASE_URL}/leaderboards/${period}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          // Add Mini App specific headers
+          'X-Mini-App': 'true',
+          'X-Context': isMiniApp ? 'farcaster' : 'web'
         },
         // Add timeout for Mini App context
-        signal: AbortSignal.timeout(10000) // 10 second timeout
+        signal: AbortSignal.timeout(isMiniApp ? 15000 : 10000) // Longer timeout for Mini App
       })
       
       if (!response.ok) {
@@ -56,12 +63,14 @@ export function useFarcasterLeaderboard() {
       // Set fallback data to prevent empty state
       setLeaderboardData({
         received: [
-          { rank: 1, address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', displayName: 'Demo User', transactionCount: 15, totalWankr: '1,234', period: 'all', source: 'farcaster' },
-          { rank: 2, address: '0x1234567890123456789012345678901234567890', displayName: 'Test User', transactionCount: 8, totalWankr: '567', period: 'all', source: 'farcaster' }
+          { rank: 1, address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', displayName: 'Demo User', transactionCount: 15, totalWankr: '1,234', period: period, source: 'farcaster' },
+          { rank: 2, address: '0x1234567890123456789012345678901234567890', displayName: 'Test User', transactionCount: 8, totalWankr: '567', period: period, source: 'farcaster' },
+          { rank: 3, address: '0xabcdef1234567890abcdef1234567890abcdef12', displayName: 'Sample User', transactionCount: 6, totalWankr: '345', period: period, source: 'farcaster' }
         ],
         sent: [
-          { rank: 1, address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', displayName: 'Demo User', transactionCount: 12, totalWankr: '890', period: 'all', source: 'farcaster' },
-          { rank: 2, address: '0x1234567890123456789012345678901234567890', displayName: 'Test User', transactionCount: 6, totalWankr: '456', period: 'all', source: 'farcaster' }
+          { rank: 1, address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6', displayName: 'Demo User', transactionCount: 12, totalWankr: '890', period: period, source: 'farcaster' },
+          { rank: 2, address: '0x1234567890123456789012345678901234567890', displayName: 'Test User', transactionCount: 6, totalWankr: '456', period: period, source: 'farcaster' },
+          { rank: 3, address: '0xabcdef1234567890abcdef1234567890abcdef12', displayName: 'Sample User', transactionCount: 4, totalWankr: '234', period: period, source: 'farcaster' }
         ]
       })
     } finally {

@@ -16,9 +16,11 @@ import { WANKR_CONTRACT_ADDRESS, WANKR_ABI, SEND_SHAME_AND_MESSAGE_ADDRESS, SEND
 interface SendWankrProps {
   initialTarget?: string
   resolutionMode?: 'farcaster-only' | 'all-options' // New prop to control resolution options
+  isFarcasterMiniApp?: boolean // New prop to detect Mini App context
+  farcasterAddress?: string // Farcaster wallet address
 }
 
-export function SendWankr({ initialTarget, resolutionMode = 'all-options' }: SendWankrProps = {}) {
+export function SendWankr({ initialTarget, resolutionMode = 'all-options', isFarcasterMiniApp = false, farcasterAddress }: SendWankrProps = {}) {
   const [formData, setFormData] = useState<SendShameForm>({
     targetAddress: initialTarget || '',
     reason: '',
@@ -172,10 +174,18 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options' }: Sen
       return
     }
 
-    const contractState = walletService.getContractState()
-    if (!contractState.contract) {
-      showError('Please connect your wallet first')
-      return
+    // Check wallet connection based on context
+    if (isFarcasterMiniApp) {
+      if (!farcasterAddress) {
+        showError('Please connect your Farcaster wallet first.')
+        return
+      }
+    } else {
+      const contractState = walletService.getContractState()
+      if (!contractState.contract) {
+        showError('Please connect your wallet first')
+        return
+      }
     }
 
     try {
@@ -209,20 +219,32 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options' }: Sen
 
       const amountInWei = ethers.parseUnits(formData.amount.toString(), 18)
       const hasReason = formData.reason.trim().length > 0
-      const walletState = walletService.getWalletState()
+      
+      // Handle wallet state based on context
+      let walletAddress: string
+      if (isFarcasterMiniApp) {
+        walletAddress = farcasterAddress || ''
+      } else {
+        const walletState = walletService.getWalletState()
+        walletAddress = walletState.address || ''
+      }
 
-      // Check if user has approved the helper contract
-      const wankrContract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI, contractState.signer)
-      const allowance = await wankrContract.allowance(walletState.address, SEND_SHAME_AND_MESSAGE_ADDRESS)
-      const requiredAmount = ethers.parseUnits(HELPER_CONTRACT_CONSTANTS.RECOMMENDED_APPROVAL_AMOUNT.toString(), 18)
+      // For Mini App, skip approval check (Farcaster handles this)
+      if (!isFarcasterMiniApp) {
+        const contractState = walletService.getContractState()
+        // Check if user has approved the helper contract
+        const wankrContract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI, contractState.signer)
+        const allowance = await wankrContract.allowance(walletAddress, SEND_SHAME_AND_MESSAGE_ADDRESS)
+        const requiredAmount = ethers.parseUnits(HELPER_CONTRACT_CONSTANTS.RECOMMENDED_APPROVAL_AMOUNT.toString(), 18)
 
-      if (allowance < amountInWei) {
-        // Need to approve first
-        console.log('🔐 Approval needed. Requesting approval...')
-        const approveTx = await wankrContract.approve(SEND_SHAME_AND_MESSAGE_ADDRESS, requiredAmount)
-        showSuccess('Approval transaction submitted. Please wait for confirmation...')
-        await approveTx.wait()
-        showSuccess('Approval confirmed! Now sending shame...')
+        if (allowance < amountInWei) {
+          // Need to approve first
+          console.log('🔐 Approval needed. Requesting approval...')
+          const approveTx = await wankrContract.approve(SEND_SHAME_AND_MESSAGE_ADDRESS, requiredAmount)
+          showSuccess('Approval transaction submitted. Please wait for confirmation...')
+          await approveTx.wait()
+          showSuccess('Approval confirmed! Now sending shame...')
+        }
       }
 
       // Prepare call to helper contract
