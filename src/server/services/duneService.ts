@@ -380,7 +380,16 @@ export class DuneService {
         return [];
       }
 
-      return result.result.rows;
+      // Filter transactions for the specific user address
+      const userAddressLower = userAddress.toLowerCase();
+      const userTransactions = result.result.rows.filter((row: Record<string, unknown>) => {
+        const fromAddress = (row.from as string)?.toLowerCase();
+        const toAddress = (row.to as string)?.toLowerCase();
+        return fromAddress === userAddressLower || toAddress === userAddressLower;
+      });
+
+      console.log(`📊 Found ${userTransactions.length} transactions for user ${userAddress.slice(0, 6)}...`);
+      return userTransactions;
     } catch (error) {
       console.error('Error fetching user transactions from Dune:', error);
       return [];

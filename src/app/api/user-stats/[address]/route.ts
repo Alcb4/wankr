@@ -20,60 +20,8 @@ export async function GET(
 
     const duneService = new DuneService()
     
-    // Try to get pre-calculated stats first (much faster)
-    const preCalculatedStats = await duneService.getUserStats(address)
-    
-    if (preCalculatedStats) {
-      // Use pre-calculated stats for better performance
-      const stats = preCalculatedStats as Record<string, string | number>
-      
-      // Calculate shame score using the pre-calculated data
-      const shameScore = shameScoreService.calculateShameScoreFromStats({
-        totalWankrReceived: parseFloat(String(stats.total_wankr_received || '0')),
-        uniqueShamers: parseInt(String(stats.unique_shamers || '0')),
-        recentShameActivity: parseInt(String(stats.recent_shames_received || '0')),
-        lastActivity: stats.last_activity ? new Date(String(stats.last_activity)).getTime() : Date.now()
-      })
-      
-      // Get verification level and badge
-      const verificationLevel = shameScoreService.getVerificationLevel(shameScore)
-      const verificationBadge = shameScoreService.getVerificationBadge(shameScore, 365) // Assume 1 year
-      
-      const userStats = {
-        address: address.toLowerCase(),
-        handle: null, // TODO: Resolve handle from address
-        shameScore,
-        verificationLevel,
-        shameFreeStreak: parseInt(String(stats.shame_free_days || '0')),
-        totalShamesSent: parseInt(String(stats.shames_sent || '0')),
-        totalShamesReceived: parseInt(String(stats.shames_received || '0')),
-        wankrSent: parseFloat(String(stats.total_wankr_sent || '0')),
-        wankrReceived: parseFloat(String(stats.total_wankr_received || '0')),
-        lastActivity: stats.last_activity ? shameScoreService.formatLastActivity(new Date(String(stats.last_activity)).getTime()) : 'Never',
-        verificationBadge,
-        checkInStreak: 0, // TODO: Implement check-in system
-        totalCheckIns: 0,
-        lastCheckIn: null,
-        canCheckIn: true,
-        timeUntilNextCheckIn: 'Available now',
-        transactionCount: parseInt(String(stats.total_transactions || '0')),
-        uniqueShamers: parseInt(String(stats.unique_shamers || '0')),
-        averageShamerReputation: 0, // Not calculated in stats query
-        recentShameActivity: parseInt(String(stats.recent_shames_received || '0'))
-      }
-      
-      console.log(`✅ Pre-calculated stats for ${address}:`, {
-        shameScore: userStats.shameScore,
-        transactions: userStats.transactionCount,
-        sent: userStats.totalShamesSent,
-        received: userStats.totalShamesReceived
-      })
-      
-      return NextResponse.json(userStats)
-    }
-    
-    // Fallback to transaction-based calculation if stats query fails
-    console.log(`⚠️ Pre-calculated stats not available, falling back to transaction calculation for ${address}`)
+    // Always use transaction-based calculation for accurate real-time data
+    console.log(`📊 Calculating stats from transaction data for ${address}`)
     
     const transactions = await duneService.getUserTransactions(address)
     
