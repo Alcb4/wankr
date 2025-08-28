@@ -3,11 +3,21 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { LeaderboardData, LeaderboardEntry } from '../config/types'
 
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://wankr.xyz/api' 
-  : typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'http://localhost:3000/api'
-    : '/api'
+const API_BASE_URL = (() => {
+  // Always use relative URLs for Mini App context to avoid CORS issues
+  if (typeof window !== 'undefined' && window.location.href.includes('farcaster')) {
+    return '/api'
+  }
+  
+  // For web context, use the appropriate URL
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://wankr.xyz/api'
+  } else if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    return 'http://localhost:3000/api'
+  } else {
+    return '/api'
+  }
+})()
 
 export function useFarcasterLeaderboard() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardData>({ received: [], sent: [] })
