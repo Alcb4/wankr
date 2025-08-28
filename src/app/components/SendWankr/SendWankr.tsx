@@ -7,6 +7,7 @@ import { ethers } from 'ethers'
 import { Transaction, TransactionButton, type LifecycleStatus } from '@coinbase/onchainkit/transaction'
 import { walletService } from '../../services/walletService'
 import { addressResolutionService } from '../../services/addressResolutionService'
+import { sdk } from '@farcaster/miniapp-sdk'
 
 import { getWankrAmountComment } from '../../utils/formatters'
 import type { SendShameForm } from '../../config/types'
@@ -393,6 +394,52 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options', isFar
     console.log('🔄 Transaction status:', status)
   }
 
+  // Farcaster Mini App specific transaction handling
+  const handleFarcasterTransaction = async () => {
+    if (!isFarcasterMiniApp || !farcasterAddress) {
+      console.error('❌ Not in Farcaster Mini App context or no address')
+      return
+    }
+
+    try {
+      console.log('📱 Starting Farcaster transaction...')
+      
+      // Use Farcaster SDK to send transaction
+      const result = await sdk.wallet.ethProvider.request({
+        method: 'eth_sendTransaction',
+        params: [{
+          from: farcasterAddress as `0x${string}`,
+          to: transactionCalls[0].to,
+          data: transactionCalls[0].data,
+          value: (transactionCalls[0].value?.toString() || '0x0') as `0x${string}`,
+          chainId: '0x2105' // Base mainnet chain ID
+        }]
+      })
+
+      console.log('✅ Farcaster transaction successful:', result)
+      
+      // Handle success without using OnchainKit types
+      const txHash = result as string
+      showSuccess(`${getWankrAmountComment(formData.amount.toString())} shame delivered! Transaction: ${txHash}`)
+      
+      // Reset form
+      setFormData({
+        targetAddress: '',
+        amount: 1,
+        reason: ''
+      })
+      setResolvedAddress('')
+      setShowTransaction(false)
+      setTransactionCalls([])
+      setIsSubmitting(false)
+
+    } catch (error) {
+      console.error('❌ Farcaster transaction failed:', error)
+      showError('Transaction failed. Please try again.')
+      setIsSubmitting(false)
+    }
+  }
+
   const testContractConnection = async () => {
     const contractState = walletService.getContractState()
     if (!contractState.contract) {
@@ -620,20 +667,30 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options', isFar
                 Cancel
               </button>
               
-              {/* OnchainKit Transaction Component inside modal */}
+              {/* Transaction Button - Different handling for Mini App vs Web */}
               <div className="flex-1">
-                <Transaction
-                  calls={transactionCalls}
-                  chainId={8453} // Base mainnet
-                  onSuccess={handleTransactionSuccess}
-                  onError={handleTransactionError}
-                  onStatus={handleTransactionStatus}
-                >
-                  <TransactionButton 
-                    text="Send Transaction"
+                {isFarcasterMiniApp ? (
+                  <button
+                    onClick={handleFarcasterTransaction}
+                    disabled={isSubmitting}
                     className="w-full py-2 px-4 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  />
-                </Transaction>
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Transaction'}
+                  </button>
+                ) : (
+                  <Transaction
+                    calls={transactionCalls}
+                    chainId={8453} // Base mainnet
+                    onSuccess={handleTransactionSuccess}
+                    onError={handleTransactionError}
+                    onStatus={handleTransactionStatus}
+                  >
+                    <TransactionButton 
+                      text="Send Transaction"
+                      className="w-full py-2 px-4 bg-primary text-primary-foreground font-semibold rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    />
+                  </Transaction>
+                )}
               </div>
             </div>
           </div>
