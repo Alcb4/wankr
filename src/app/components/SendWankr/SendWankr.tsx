@@ -404,84 +404,37 @@ export function SendWankr({ initialTarget, resolutionMode = 'all-options', isFar
     try {
       console.log('📱 Starting Farcaster transaction...')
       
-      // First, check if approval is needed
-      const wankrContract = new ethers.Contract(WANKR_CONTRACT_ADDRESS, WANKR_ABI)
-      const amountInWei = ethers.parseUnits(formData.amount.toString(), 18)
-      const requiredAmount = ethers.parseUnits(HELPER_CONTRACT_CONSTANTS.RECOMMENDED_APPROVAL_AMOUNT.toString(), 18)
-      
-      // Check current allowance
-      const allowanceData = wankrContract.interface.encodeFunctionData('allowance', [
-        farcasterAddress,
-        SEND_SHAME_AND_MESSAGE_ADDRESS
-      ])
-      
-      const allowanceResult = await sdk.wallet.ethProvider.request({
-        method: 'eth_call',
-        params: [{
-          to: WANKR_CONTRACT_ADDRESS,
-          data: allowanceData as `0x${string}`,
-          from: farcasterAddress as `0x${string}`
-        }, 'latest']
-      }) as string
-      
-      const currentAllowance = ethers.formatUnits(allowanceResult, 18)
-      console.log('🔍 Current allowance:', currentAllowance, 'WANKR')
-      
-      // If allowance is insufficient, request approval first
-      if (parseFloat(currentAllowance) < formData.amount) {
-        console.log('🔐 Approval needed. Requesting approval...')
-        
-        const approveData = wankrContract.interface.encodeFunctionData('approve', [
-          SEND_SHAME_AND_MESSAGE_ADDRESS,
-          requiredAmount
-        ])
-        
-        const approveResult = await sdk.wallet.ethProvider.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: farcasterAddress as `0x${string}`,
-            to: WANKR_CONTRACT_ADDRESS,
-            data: approveData as `0x${string}`,
-            value: '0x0',
-            chainId: '0x2105' // Base mainnet chain ID
-          }]
-        })
-        
-        console.log('✅ Approval transaction submitted:', approveResult)
-        showSuccess('Approval transaction submitted. Please wait for confirmation...')
-        
-        // Wait a bit for the approval to be processed
-        await new Promise(resolve => setTimeout(resolve, 3000))
-      }
-      
-      // Now send the actual transaction
-      const result = await sdk.wallet.ethProvider.request({
-        method: 'eth_sendTransaction',
-        params: [{
-          from: farcasterAddress as `0x${string}`,
-          to: transactionCalls[0].to,
-          data: transactionCalls[0].data,
-          value: (transactionCalls[0].value?.toString() || '0x0') as `0x${string}`,
-          chainId: '0x2105' // Base mainnet chain ID
-        }]
+      // Use the proper Farcaster SDK sendToken method
+      // This handles approval and transfer automatically
+      const result = await sdk.actions.sendToken({
+        token: `eip155:8453/erc20:${WANKR_CONTRACT_ADDRESS}`, // Base WANKR token
+        amount: ethers.parseUnits(formData.amount.toString(), 18).toString(),
+        recipientAddress: resolvedAddress as `0x${string}`
       })
 
-      console.log('✅ Farcaster transaction successful:', result)
-      
-      // Handle success without using OnchainKit types
-      const txHash = result as string
-      showSuccess(`${getWankrAmountComment(formData.amount.toString())} shame delivered! Transaction: ${txHash}`)
-      
-      // Reset form
-      setFormData({
-        targetAddress: '',
-        amount: 1,
-        reason: ''
-      })
-      setResolvedAddress('')
-      setShowTransaction(false)
-      setTransactionCalls([])
-      setIsSubmitting(false)
+      if (result.success) {
+        console.log('✅ Farcaster transaction successful:', result.send.transaction)
+        showSuccess(`${getWankrAmountComment(formData.amount.toString())} shame delivered! Transaction: ${result.send.transaction}`)
+        
+        // Reset form
+        setFormData({
+          targetAddress: '',
+          amount: 1,
+          reason: ''
+        })
+        setResolvedAddress('')
+        setShowTransaction(false)
+        setTransactionCalls([])
+        setIsSubmitting(false)
+      } else {
+        console.error('❌ Farcaster transaction failed:', result.reason, result.error)
+        if (result.reason === 'rejected_by_user') {
+          showError('Transaction was cancelled by user.')
+        } else {
+          showError('Transaction failed. Please try again.')
+        }
+        setIsSubmitting(false)
+      }
 
     } catch (error) {
       console.error('❌ Farcaster transaction failed:', error)
