@@ -14,11 +14,6 @@ export interface UserStats {
   wankrReceived: number
   lastActivity: string
   verificationBadge: boolean
-  checkInStreak: number
-  totalCheckIns: number
-  lastCheckIn: number | null
-  canCheckIn: boolean
-  timeUntilNextCheckIn: string
   transactionCount: number
   uniqueShamers: number
   averageShamerReputation: number

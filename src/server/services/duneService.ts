@@ -422,9 +422,9 @@ export class DuneService {
    * Get user's aggregated stats (for performance)
    * This provides pre-calculated stats to avoid client-side processing
    */
-  async getUserStats(userAddress: string): Promise<Record<string, unknown> | null> {
+  async getUserStats(userAddress: string): Promise<any> {
     try {
-      console.log(`🔍 Fetching stats for user: ${userAddress.slice(0, 6)}...`);
+      console.log(`🔍 Fetching stats for user: ${userAddress.slice(0, 6)}...`)
       
       // Use parameterized query with user address
       const result = await this.duneClient.runQuery({
@@ -432,17 +432,37 @@ export class DuneService {
         query_parameters: [
           QueryParameter.text("user_address", userAddress)
         ]
-      });
-
+      })
+      
       if (!result.result || !result.result.rows || result.result.rows.length === 0) {
-        console.log('❌ No user stats data from Dune API');
-        return null;
+        console.log('❌ No user stats data from Dune API')
+        return null
       }
-
-      return result.result.rows[0];
+      
+      console.log(`📊 Found user stats for ${userAddress.slice(0, 6)}...`)
+      return result.result.rows[0]
     } catch (error) {
-      console.error('Error fetching user stats from Dune:', error);
-      return null;
+      console.error('Error fetching user stats from Dune:', error)
+      
+      // If rate limited, try to get cached result
+      if (typeof error === 'object' && error !== null && 'message' in error && 
+          typeof error.message === 'string' && 
+          (error.message.includes('429') || error.message.includes('Too many requests'))) {
+        console.log('🔄 Rate limited, trying cached result...')
+        try {
+          const cachedResult = await this.duneClient.getLatestResult({
+            queryId: this.USER_STATS_QUERY_ID
+          })
+          if (cachedResult && cachedResult.result && cachedResult.result.rows) {
+            console.log('✅ Using cached user stats data')
+            return cachedResult.result.rows[0]
+          }
+        } catch (cacheError) {
+          console.error('Error fetching cached user stats:', cacheError)
+        }
+      }
+      
+      return null
     }
   }
 }

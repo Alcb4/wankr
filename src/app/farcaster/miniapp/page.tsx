@@ -36,11 +36,6 @@ interface UserProfile {
   wankrReceived: string
   lastActivity: string
   verificationBadge: boolean
-  checkInStreak: number
-  totalCheckIns: number
-  lastCheckIn: number
-  canCheckIn: boolean
-  timeUntilNextCheckIn: string
 }
 
 type TabType = 'send' | 'profile' | 'verify' | 'leaderboard' | 'analytics'
@@ -69,13 +64,7 @@ function FarcasterMiniAppContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<UserProfile | null>(null)
   const [isSearching, setIsSearching] = useState(false)
-  const [showCheckInNotification, setShowCheckInNotification] = useState(false)
-  const [hasCheckedIn, setHasCheckedIn] = useState(false)
-  const [currentStreakInfo, setCurrentStreakInfo] = useState<{
-    message: string
-    emoji: string
-    color: string
-  } | null>(null)
+
   const [sendShameTarget, setSendShameTarget] = useState<string>('')
 
   // Leaderboard data
@@ -138,40 +127,7 @@ function FarcasterMiniAppContent() {
     initializeApp()
   }, [])
 
-  // FIXED: Show check-in immediately on app load, then load site data
-  useEffect(() => {
-    if (!isAppReady) return // Wait for app to be ready
 
-    const performAutoCheckIn = async () => {
-      try {
-        // Show check-in notification immediately
-        setShowCheckInNotification(true)
-        
-        // Simulate auto check-in
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Get current streak day for messaging
-        const currentStreak = realUserStats?.checkInStreak || 0
-        const newStreak = currentStreak + 1
-        const streakInfo = verificationService.getStreakDayMessage(newStreak)
-        
-        setHasCheckedIn(true)
-        
-        // Store streak info for display
-        setCurrentStreakInfo(streakInfo)
-        
-        // Hide notification after 4 seconds (longer for milestone messages)
-        setTimeout(() => {
-          setShowCheckInNotification(false)
-        }, 4000)
-      } catch (error) {
-        console.error('Auto check-in failed:', error)
-      }
-    }
-
-    // Perform check-in immediately when component mounts
-    performAutoCheckIn()
-  }, [isAppReady, realUserStats?.checkInStreak]) // Added isAppReady dependency
 
   // Load user profile in background
   const loadUserProfile = async () => {
@@ -233,11 +189,6 @@ function FarcasterMiniAppContent() {
         wankrReceived: stats.totalWankrReceived,
         lastActivity: shameScoreService.formatLastActivity(stats.lastActivity),
         verificationBadge: shameScoreService.getVerificationBadge(stats.shameScore, stats.accountAgeDays),
-        checkInStreak: Math.floor(Math.random() * 7),
-        totalCheckIns: Math.floor(Math.random() * 30),
-        lastCheckIn: Date.now() - Math.random() * 24 * 60 * 60 * 1000,
-        canCheckIn: Math.random() > 0.5,
-        timeUntilNextCheckIn: Math.random() > 0.5 ? 'Available now' : '12h 30m'
       }
       
       setSearchResults(searchResult)
@@ -266,34 +217,6 @@ function FarcasterMiniAppContent() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-            {/* Check-in Notification Overlay */}
-      {showCheckInNotification && currentStreakInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-xl p-8 max-w-sm mx-4 text-center animate-in zoom-in-95 duration-300">
-            <div className="w-16 h-16 bg-gradient-to-r from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <span className="text-2xl">{currentStreakInfo.emoji}</span>
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Check-in Successful!</h3>
-            <p className={`mb-4 font-medium ${currentStreakInfo.color}`}>
-              {currentStreakInfo.message}
-            </p>
-            <div className="bg-muted rounded-lg p-3 mb-4">
-              <p className="text-sm text-muted-foreground">
-                Keep checking in daily to maintain your streak and boost your verification score!
-              </p>
-            </div>
-            <button
-              onClick={() => setShowCheckInNotification(false)}
-              className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main App Content - Only show when check-in is dismissed */}
-      {!showCheckInNotification && (
         <>
           {/* Header */}
           <div className="bg-gradient-to-r from-primary to-accent p-4 shadow-lg">
@@ -788,7 +711,6 @@ function FarcasterMiniAppContent() {
             </div>
           </div>
         </>
-      )}
     </div>
   )
 }
