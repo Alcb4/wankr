@@ -94,6 +94,10 @@ function FarcasterMiniAppContent() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Get Farcaster context first
+        const context = await sdk.context
+        console.log('🔍 Farcaster context:', context)
+        
         // Initialize Farcaster wallet connection
         const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' })
         
@@ -101,6 +105,12 @@ function FarcasterMiniAppContent() {
           setIsConnected(true)
           setAddress(accounts[0])
           console.log('✅ Farcaster wallet connected:', accounts[0])
+          
+          // If we have context with user info, use it
+          if (context && 'user' in context) {
+            console.log('👤 Farcaster user info:', context.user)
+            // TODO: Extract FID and handle from context.user if available
+          }
         } else {
           console.log('⚠️ No Farcaster wallet connected')
           // For testing, use demo address
@@ -365,11 +375,18 @@ function FarcasterMiniAppContent() {
                   <div className="space-y-6">
                     {/* Profile Header */}
                     <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-3">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-sm font-semibold">@{realUserStats.handle || 'user'}</h4>
-                          <p className="text-xs text-muted-foreground font-mono">{realUserStats.address.slice(0, 6)}...{realUserStats.address.slice(-4)}</p>
-                        </div>
+                                              <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="text-sm font-semibold">
+                              {realUserStats.handle ? `@${realUserStats.handle}` : realUserStats.displayName || 'Anonymous User'}
+                            </h4>
+                            <p className="text-xs text-muted-foreground font-mono">{realUserStats.address.slice(0, 6)}...{realUserStats.address.slice(-4)}</p>
+                            {realUserStats.handleSource && realUserStats.handleSource !== 'shortened' && (
+                              <p className="text-xs text-blue-400 mt-1">
+                                {realUserStats.handleSource === 'farcaster' ? '🟣 Farcaster' : '🔵 Base Names'}
+                              </p>
+                            )}
+                          </div>
                         <div className="text-right">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerificationColor(realUserStats.verificationLevel)} bg-muted`}>
                             {getVerificationIcon(realUserStats.verificationLevel)} {realUserStats.verificationLevel}

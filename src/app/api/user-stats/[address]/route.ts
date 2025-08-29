@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { DuneService } from '@/server/services/duneService'
 import { shameScoreService } from '@/app/services/shameScoreService'
+import { HandleResolutionService } from '@/server/services/handleResolutionService'
+import { CheckRegisterService } from '@/server/services/checkRegister'
+import { RegisterService } from '@/server/services/register'
 
 export async function GET(
   request: NextRequest,
@@ -19,9 +22,63 @@ export async function GET(
     console.log(`📊 Fetching stats for address: ${address}`)
 
     const duneService = new DuneService()
+    const registerService = new RegisterService()
+    const handleResolver = new HandleResolutionService(
+      new CheckRegisterService(registerService),
+      registerService
+    )
     
-    // Always use transaction-based calculation for accurate real-time data
-    console.log(`📊 Calculating stats from transaction data for ${address}`)
+    // Resolve user's handle first
+    console.log(`🔍 Resolving handle for address: ${address}`)
+    const handleResolution = await handleResolver.resolveHandle(address)
+    
+    // Try to get pre-calculated stats first (more efficient)
+    console.log(`📊 Fetching pre-calculated stats for ${address}`)
+    const preCalculatedStats = await duneService.getUserStats(address)
+    
+    if (preCalculatedStats) {
+      console.log(`✅ Found pre-calculated stats for ${address}:`, preCalculatedStats)
+      
+      // Transform Dune stats to our format
+      const userStats = {
+        address: address.toLowerCase(),
+        handle: handleResolution.handle || null,
+        displayName: handleResolution.displayName,
+        handleSource: handleResolution.source,
+        shameScore: shameScoreService.calculateShameScoreFromStats(preCalculatedStats),
+        verificationLevel: shameScoreService.getVerificationLevelFromStats(preCalculatedStats),
+        shameFreeStreak: parseInt(preCalculatedStats.shame_free_days as string) || 0,
+        totalShamesSent: parseInt(preCalculatedStats.shames_sent as string) || 0,
+        totalShamesReceived: parseInt(preCalculatedStats.shames_received as string) || 0,
+        wankrSent: parseFloat(preCalculatedStats.total_wankr_sent as string) || 0,
+        wankrReceived: parseFloat(preCalculatedStats.total_wankr_received as string) || 0,
+        lastActivity: preCalculatedStats.last_activity ? shameScoreService.formatLastActivity(new Date(preCalculatedStats.last_activity as string).getTime()) : 'Never',
+        verificationBadge: shameScoreService.getVerificationBadgeFromStats(preCalculatedStats),
+        checkInStreak: 0, // TODO: Implement check-in system
+        totalCheckIns: 0,
+        lastCheckIn: null,
+        canCheckIn: true,
+        timeUntilNextCheckIn: 'Available now',
+        transactionCount: parseInt(preCalculatedStats.total_transactions as string) || 0,
+        uniqueShamers: parseInt(preCalculatedStats.unique_shamers as string) || 0,
+        averageShamerReputation: 0, // TODO: Calculate from data
+        recentShameActivity: parseInt(preCalculatedStats.recent_shames_received as string) || 0
+      }
+
+      console.log(`✅ Stats calculated for ${address}:`, {
+        shameScore: userStats.shameScore,
+        transactions: userStats.transactionCount,
+        sent: userStats.totalShamesSent,
+        received: userStats.totalShamesReceived,
+        handle: userStats.handle,
+        displayName: userStats.displayName
+      })
+
+      return NextResponse.json(userStats)
+    }
+    
+    // Fallback to transaction-based calculation if pre-calculated stats not available
+    console.log(`📊 Falling back to transaction-based calculation for ${address}`)
     
     const transactions = await duneService.getUserTransactions(address)
     
@@ -29,7 +86,9 @@ export async function GET(
     if (!transactions || transactions.length === 0) {
       const emptyStats = {
         address: address.toLowerCase(),
-        handle: null,
+        handle: handleResolution.handle || null,
+        displayName: handleResolution.displayName,
+        handleSource: handleResolution.source,
         shameScore: 0,
         verificationLevel: 'Unverified',
         shameFreeStreak: 0,
@@ -84,7 +143,9 @@ export async function GET(
 
     const userStats = {
       address: address.toLowerCase(),
-      handle: null, // TODO: Resolve handle from address
+      handle: handleResolution.handle || null,
+      displayName: handleResolution.displayName,
+      handleSource: handleResolution.source,
       shameScore: stats.shameScore,
       verificationLevel,
       shameFreeStreak: stats.shameFreeStreak,
@@ -109,7 +170,9 @@ export async function GET(
       shameScore: userStats.shameScore,
       transactions: userStats.transactionCount,
       sent: userStats.totalShamesSent,
-      received: userStats.totalShamesReceived
+      received: userStats.totalShamesReceived,
+      handle: userStats.handle,
+      displayName: userStats.displayName
     })
 
     return NextResponse.json(userStats)

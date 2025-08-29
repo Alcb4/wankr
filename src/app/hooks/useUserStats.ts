@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 export interface UserStats {
   address: string
   handle: string | null
+  displayName: string
+  handleSource: 'farcaster' | 'basenames' | 'shortened'
   shameScore: number
   verificationLevel: string
   shameFreeStreak: number

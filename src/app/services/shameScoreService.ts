@@ -302,26 +302,55 @@ export class ShameScoreService {
   }
 
   /**
-   * Calculate shame score from pre-calculated stats (for performance)
+   * Get current configuration for debugging
    */
-  calculateShameScoreFromStats(stats: {
-    totalWankrReceived: number
-    uniqueShamers: number
-    recentShameActivity: number
-    lastActivity: number
-  }): number {
-    const now = Date.now()
-    const timeDecay = Math.pow(this.config.timeDecayFactor, (now - stats.lastActivity) / (24 * 60 * 60 * 1000))
+  getConfig(): ShameScoreConfig {
+    return { ...this.config }
+  }
+
+  /**
+   * Calculate shame score from pre-calculated Dune stats
+   */
+  calculateShameScoreFromStats(stats: Record<string, unknown>): number {
+    const shamesReceived = parseInt(stats.shames_received as string) || 0
+    const totalWankrReceived = parseFloat(stats.total_wankr_received as string) || 0
+    const uniqueShamers = parseInt(stats.unique_shamers as string) || 0
+    const recentShamesReceived = parseInt(stats.recent_shames_received as string) || 0
     
-    // Apply the enhanced shame score formula
-    const baseScore = Math.min(stats.totalWankrReceived, this.config.maxTransactionCap)
-    const uniqueShamersBonus = Math.pow(stats.uniqueShamers, this.config.uniqueShamersExponent)
-    const recentActivityBonus = 1 + (stats.recentShameActivity * 0.1) // Recent activity bonus
+    // Simple shame score calculation based on received shame
+    if (shamesReceived === 0) return 0
     
-    const shameScore = baseScore * uniqueShamersBonus * recentActivityBonus * timeDecay
+    // Base score from WANKR received (capped at 10 per transaction)
+    const baseScore = Math.min(totalWankrReceived, shamesReceived * 10)
     
-    // Cap the score at 100 to keep it reasonable
-    return Math.min(100, Math.round(shameScore))
+    // Bonus for multiple unique shamers (consensus factor)
+    const consensusBonus = Math.pow(uniqueShamers, 1.2)
+    
+    // Recent activity penalty
+    const recentPenalty = recentShamesReceived * 2
+    
+    const finalScore = Math.min(100, Math.round((baseScore * consensusBonus + recentPenalty) / 10))
+    
+    return finalScore
+  }
+
+  /**
+   * Get verification level from pre-calculated stats
+   */
+  getVerificationLevelFromStats(stats: Record<string, unknown>): string {
+    const shameScore = this.calculateShameScoreFromStats(stats)
+    return this.getVerificationLevel(shameScore)
+  }
+
+  /**
+   * Get verification badge from pre-calculated stats
+   */
+  getVerificationBadgeFromStats(stats: Record<string, unknown>): boolean {
+    const shameScore = this.calculateShameScoreFromStats(stats)
+    const firstActivity = stats.first_activity ? new Date(stats.first_activity as string).getTime() : Date.now()
+    const accountAgeDays = Math.floor((Date.now() - firstActivity) / (1000 * 60 * 60 * 24))
+    
+    return this.getVerificationBadge(shameScore, accountAgeDays)
   }
 
   /**
@@ -428,13 +457,6 @@ export class ShameScoreService {
    */
   updateConfig(newConfig: Partial<ShameScoreConfig>): void {
     this.config = { ...this.config, ...newConfig }
-  }
-
-  /**
-   * Get current configuration for debugging
-   */
-  getConfig(): ShameScoreConfig {
-    return { ...this.config }
   }
 }
 

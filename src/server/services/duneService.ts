@@ -1,4 +1,4 @@
-import { DuneClient } from '@duneanalytics/client-sdk';
+import { DuneClient, QueryParameter } from '@duneanalytics/client-sdk';
 
 // Raw data from Dune (no handle resolution)
 export interface DuneRawEntry {
@@ -35,7 +35,7 @@ export class DuneService {
   
   // User-specific query IDs
   private readonly USER_TRANSACTIONS_QUERY_ID = 5684382; // User's transactions with direction
-  private readonly USER_STATS_QUERY_ID = 5684552; // User's aggregated stats
+  private readonly USER_STATS_QUERY_ID = 5682001; // User's aggregated stats
 
   constructor() {
     const apiKey = process.env.DUNE_API_KEY;
@@ -369,10 +369,12 @@ export class DuneService {
     try {
       console.log(`🔍 Fetching transactions for user: ${userAddress.slice(0, 6)}...`);
       
-      // For now, use a simple query without parameters
-      // TODO: Create parameterized query in Dune
-      const result = await this.duneClient.getLatestResult({
-        queryId: this.USER_TRANSACTIONS_QUERY_ID
+      // Use parameterized query with user address
+      const result = await this.duneClient.runQuery({
+        queryId: this.USER_TRANSACTIONS_QUERY_ID,
+        query_parameters: [
+          QueryParameter.text("user_address", userAddress)
+        ]
       });
 
       if (!result.result || !result.result.rows) {
@@ -380,16 +382,8 @@ export class DuneService {
         return [];
       }
 
-      // Filter transactions for the specific user address
-      const userAddressLower = userAddress.toLowerCase();
-      const userTransactions = result.result.rows.filter((row: Record<string, unknown>) => {
-        const fromAddress = (row.from as string)?.toLowerCase();
-        const toAddress = (row.to as string)?.toLowerCase();
-        return fromAddress === userAddressLower || toAddress === userAddressLower;
-      });
-
-      console.log(`📊 Found ${userTransactions.length} transactions for user ${userAddress.slice(0, 6)}...`);
-      return userTransactions;
+      console.log(`📊 Found ${result.result.rows.length} transactions for user ${userAddress.slice(0, 6)}...`);
+      return result.result.rows;
     } catch (error) {
       console.error('Error fetching user transactions from Dune:', error);
       return [];
@@ -432,10 +426,12 @@ export class DuneService {
     try {
       console.log(`🔍 Fetching stats for user: ${userAddress.slice(0, 6)}...`);
       
-      // For now, use a simple query without parameters
-      // TODO: Create parameterized query in Dune
-      const result = await this.duneClient.getLatestResult({
-        queryId: this.USER_STATS_QUERY_ID
+      // Use parameterized query with user address
+      const result = await this.duneClient.runQuery({
+        queryId: this.USER_STATS_QUERY_ID,
+        query_parameters: [
+          QueryParameter.text("user_address", userAddress)
+        ]
       });
 
       if (!result.result || !result.result.rows || result.result.rows.length === 0) {
