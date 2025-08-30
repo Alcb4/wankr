@@ -56,6 +56,12 @@ function FarcasterMiniAppContent() {
   const [address, setAddress] = useState<string>('')
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [isAppReady, setIsAppReady] = useState(false)
+  const [farcasterUser, setFarcasterUser] = useState<{
+    fid: number
+    username: string
+    displayName: string
+    pfpUrl: string
+  } | null>(null)
   
   // Real user stats from on-chain data
   const { stats: realUserStats, isLoading: isLoadingRealStats } = useUserStats(address || null)
@@ -96,7 +102,12 @@ function FarcasterMiniAppContent() {
           // If we have context with user info, use it
           if (context && 'user' in context) {
             console.log('👤 Farcaster user info:', context.user)
-            // TODO: Extract FID and handle from context.user if available
+            setFarcasterUser(context.user as {
+              fid: number
+              username: string
+              displayName: string
+              pfpUrl: string
+            })
           }
         } else {
           console.log('⚠️ No Farcaster wallet connected')
@@ -296,18 +307,22 @@ function FarcasterMiniAppContent() {
                   <div className="space-y-6">
                     {/* Profile Header */}
                     <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-3">
-                                              <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="text-sm font-semibold">
-                              {realUserStats.handle ? `@${realUserStats.handle}` : realUserStats.displayName || 'Anonymous User'}
-                            </h4>
-                            <p className="text-xs text-muted-foreground font-mono">{realUserStats.address.slice(0, 6)}...{realUserStats.address.slice(-4)}</p>
-                            {realUserStats.handleSource && realUserStats.handleSource !== 'shortened' && (
-                              <p className="text-xs text-blue-400 mt-1">
-                                {realUserStats.handleSource === 'farcaster' ? '🟣 Farcaster' : '🔵 Base Names'}
-                              </p>
-                            )}
-                          </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-sm font-semibold">
+                            {farcasterUser ? `@${farcasterUser.username}` : 
+                             realUserStats.handle ? `@${realUserStats.handle}` : 
+                             realUserStats.displayName || 'Anonymous User'}
+                          </h4>
+                          <p className="text-xs text-muted-foreground font-mono">{realUserStats.address.slice(0, 6)}...{realUserStats.address.slice(-4)}</p>
+                          {farcasterUser ? (
+                            <p className="text-xs text-blue-400 mt-1">🟣 Farcaster</p>
+                          ) : realUserStats.handleSource && realUserStats.handleSource !== 'shortened' && (
+                            <p className="text-xs text-blue-400 mt-1">
+                              {realUserStats.handleSource === 'farcaster' ? '🟣 Farcaster' : '🔵 Base Names'}
+                            </p>
+                          )}
+                        </div>
                         <div className="text-right">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVerificationColor(realUserStats.verificationLevel)} bg-muted`}>
                             {getVerificationIcon(realUserStats.verificationLevel)} {realUserStats.verificationLevel}
