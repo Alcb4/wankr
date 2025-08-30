@@ -422,7 +422,7 @@ export class DuneService {
    * Get user's aggregated stats (for performance)
    * This provides pre-calculated stats to avoid client-side processing
    */
-  async getUserStats(userAddress: string): Promise<any> {
+  async getUserStats(userAddress: string): Promise<Record<string, unknown> | null> {
     try {
       console.log(`🔍 Fetching stats for user: ${userAddress.slice(0, 6)}...`)
       

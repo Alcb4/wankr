@@ -7,10 +7,9 @@ import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { SendWankr } from '../../components/SendWankr/SendWankr'
 import { shameScoreService } from '../../services/shameScoreService'
-import { verificationService } from '../../services/verificationService'
 import { useFarcasterLeaderboard } from '../../hooks/useFarcasterLeaderboard'
 import { useUserStats } from '../../hooks/useUserStats'
-import { Send, User, Search, Trophy, BarChart3, TrendingUp, TrendingDown } from 'lucide-react'
+import { Send, User, Search, Trophy, TrendingUp, TrendingDown } from 'lucide-react'
 
 // Import Farcaster Mini App SDK
 import { sdk } from '@farcaster/miniapp-sdk'
@@ -55,12 +54,11 @@ function FarcasterMiniAppContent() {
   const [activeTab, setActiveTab] = useState<TabType>('send')
   const [isConnected, setIsConnected] = useState(false)
   const [address, setAddress] = useState<string>('')
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [isAppReady, setIsAppReady] = useState(false)
   
   // Real user stats from on-chain data
-  const { stats: realUserStats, isLoading: isLoadingRealStats, error: statsError, refreshStats } = useUserStats(address || null)
+  const { stats: realUserStats, isLoading: isLoadingRealStats } = useUserStats(address || null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<UserProfile | null>(null)
   const [isSearching, setIsSearching] = useState(false)
@@ -166,7 +164,7 @@ function FarcasterMiniAppContent() {
       await new Promise(resolve => setTimeout(resolve, 1000))
       
       const mockAddress = '0x' + Math.random().toString(16).slice(2, 42)
-      const mockTransactions = Array.from({ length: Math.floor(Math.random() * 20) }, (_, i) => ({
+      const mockTransactions = Array.from({ length: Math.floor(Math.random() * 20) }, () => ({
         from: Math.random() > 0.6 ? mockAddress : '0x' + Math.random().toString(16).slice(2, 42),
         to: Math.random() > 0.6 ? '0x' + Math.random().toString(16).slice(2, 42) : mockAddress,
         amount: (Math.random() * 25 + 1).toFixed(1),

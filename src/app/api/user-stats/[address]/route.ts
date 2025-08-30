@@ -124,13 +124,6 @@ export async function GET(
     const verificationLevel = shameScoreService.getVerificationLevel(stats.shameScore)
     const verificationBadge = shameScoreService.getVerificationBadge(stats.shameScore, stats.accountAgeDays)
 
-    // Get check-in info (for now, use localStorage or default values)
-    const checkInStreak = 0 // TODO: Implement check-in system
-    const totalCheckIns = 0
-    const lastCheckIn = null
-    const canCheckIn = true
-    const timeUntilNextCheckIn = 'Available now'
-
     const userStats = {
       address: address.toLowerCase(),
       handle: handleResolution.handle || null,
