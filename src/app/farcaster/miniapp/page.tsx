@@ -92,7 +92,15 @@ function FarcasterMiniAppContent() {
         console.log('🔍 Farcaster context:', context)
         
         // Initialize Farcaster wallet connection
-        const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' })
+        console.log('🔍 Attempting to connect Farcaster wallet...')
+        let accounts
+        try {
+          accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' })
+          console.log('🔍 Wallet accounts response:', accounts)
+        } catch (walletError) {
+          console.error('❌ Wallet connection failed:', walletError)
+          accounts = null
+        }
         
         if (accounts && accounts.length > 0) {
           setIsConnected(true)
@@ -111,9 +119,36 @@ function FarcasterMiniAppContent() {
           }
         } else {
           console.log('⚠️ No Farcaster wallet connected')
-          // For testing, use demo address
-          setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
-          setIsConnected(true)
+          
+          // Try to get address from context if available
+          if (context && 'user' in context && context.user) {
+            console.log('🔍 Trying to get address from context user...')
+            // Check if context has wallet address
+            if ('verified_accounts' in context.user && context.user.verified_accounts) {
+              const verifiedAccounts = context.user.verified_accounts as Array<{ address: string }>
+              if (verifiedAccounts.length > 0) {
+                const userAddress = verifiedAccounts[0].address
+                console.log('✅ Using address from context:', userAddress)
+                setAddress(userAddress)
+                setIsConnected(true)
+              } else {
+                console.log('⚠️ No verified accounts in context')
+                // For testing, use demo address
+                setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
+                setIsConnected(true)
+              }
+            } else {
+              console.log('⚠️ No verified accounts in context user')
+              // For testing, use demo address
+              setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
+              setIsConnected(true)
+            }
+          } else {
+            console.log('⚠️ No context user available')
+            // For testing, use demo address
+            setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
+            setIsConnected(true)
+          }
         }
 
         // Call ready() to hide splash screen
