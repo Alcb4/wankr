@@ -1,4 +1,4 @@
--- Dune Query ID: 5682001 (Optimized Version)
+-- Dune Query ID: 5684552 (Corrected Version)
 -- User Stats Query
 -- Purpose: Pre-calculated user stats for performance
 -- Parameters: user_address (string)

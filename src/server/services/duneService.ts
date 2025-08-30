@@ -35,7 +35,7 @@ export class DuneService {
   
   // User-specific query IDs
   private readonly USER_TRANSACTIONS_QUERY_ID = 5684382; // User's transactions with direction
-  private readonly USER_STATS_QUERY_ID = 5682001; // User's aggregated stats
+  private readonly USER_STATS_QUERY_ID = 5684552; // User's aggregated stats (CORRECTED)
 
   constructor() {
     const apiKey = process.env.DUNE_API_KEY;

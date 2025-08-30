@@ -309,7 +309,8 @@ export class ShameScoreService {
   }
 
   /**
-   * Calculate shame score from pre-calculated Dune stats
+   * Calculate trust score from pre-calculated Dune stats
+   * NOTE: This is a TRUST score (inverted shame score) - higher is better
    */
   calculateShameScoreFromStats(stats: Record<string, unknown>): number {
     const shamesReceived = parseInt(stats.shames_received as string) || 0
@@ -317,40 +318,44 @@ export class ShameScoreService {
     const uniqueShamers = parseInt(stats.unique_shamers as string) || 0
     const recentShamesReceived = parseInt(stats.recent_shames_received as string) || 0
     
-    // Simple shame score calculation based on received shame
-    if (shamesReceived === 0) return 0
+    // If no shame received, perfect trust score
+    if (shamesReceived === 0) return 100
     
-    // Base score from WANKR received (capped at 10 per transaction)
-    const baseScore = Math.min(totalWankrReceived, shamesReceived * 10)
+    // Calculate shame penalty (more shame = lower trust)
+    const baseShamePenalty = Math.min(totalWankrReceived, shamesReceived * 10)
     
-    // Bonus for multiple unique shamers (consensus factor)
-    const consensusBonus = Math.pow(uniqueShamers, 1.2)
+    // Penalty for multiple unique shamers (consensus factor)
+    const consensusPenalty = Math.pow(uniqueShamers, 1.2)
     
     // Recent activity penalty
     const recentPenalty = recentShamesReceived * 2
     
-    const finalScore = Math.min(100, Math.round((baseScore * consensusBonus + recentPenalty) / 10))
+    // Calculate trust score (100 - shame penalty)
+    const shamePenalty = Math.min(100, Math.round((baseShamePenalty * consensusPenalty + recentPenalty) / 10))
+    const trustScore = Math.max(0, 100 - shamePenalty)
     
-    return finalScore
+    return trustScore
   }
 
   /**
-   * Get verification level from pre-calculated stats
+   * Get verification level based on trust score
+   * NOTE: This is now based on TRUST score, not shame score
    */
   getVerificationLevelFromStats(stats: Record<string, unknown>): string {
-    const shameScore = this.calculateShameScoreFromStats(stats)
-    return this.getVerificationLevel(shameScore)
+    const trustScore = this.calculateShameScoreFromStats(stats)
+    return this.getVerificationLevel(trustScore)
   }
 
   /**
    * Get verification badge from pre-calculated stats
+   * NOTE: This is now based on TRUST score, not shame score
    */
   getVerificationBadgeFromStats(stats: Record<string, unknown>): boolean {
-    const shameScore = this.calculateShameScoreFromStats(stats)
+    const trustScore = this.calculateShameScoreFromStats(stats)
     const firstActivity = stats.first_activity ? new Date(stats.first_activity as string).getTime() : Date.now()
     const accountAgeDays = Math.floor((Date.now() - firstActivity) / (1000 * 60 * 60 * 24))
     
-    return this.getVerificationBadge(shameScore, accountAgeDays)
+    return this.getVerificationBadge(trustScore, accountAgeDays)
   }
 
   /**
