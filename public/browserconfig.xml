@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+    <msapplication>
+        <tile>
+            <square150x150logo src="/wankr-icon.svg"/>
+            <square310x310logo src="/wankr-icon.svg"/>
+            <TileColor>#7630D9</TileColor>
+        </tile>
+    </msapplication>
+</browserconfig>

@@ -64,6 +64,12 @@ export default function RootLayout({
     <html lang="en" className={mouseMemoirs.variable} suppressHydrationWarning>
       <head>
         <link rel="preload" href="/wankr-icon.svg" as="image" type="image/svg+xml" />
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="icon" type="image/svg+xml" href="/wankr-icon.svg" />
+        <link rel="shortcut icon" href="/favicon.svg" />
+        <link rel="apple-touch-icon" href="/wankr-icon.svg" />
+        <meta name="msapplication-TileColor" content="#7630D9" />
+        <meta name="theme-color" content="#7630D9" />
       </head>
       <body className="font-sans antialiased">
         <ThemeProvider
