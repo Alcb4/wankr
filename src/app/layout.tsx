@@ -70,6 +70,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/wankr-icon.svg" />
         <meta name="msapplication-TileColor" content="#7630D9" />
         <meta name="theme-color" content="#7630D9" />
+        <link rel="preconnect" href="https://auth.farcaster.xyz" />
       </head>
       <body className="font-sans antialiased">
         <ThemeProvider

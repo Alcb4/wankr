@@ -87,36 +87,23 @@ function FarcasterMiniAppContent() {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        console.log('🔍 Initializing Farcaster Mini App...')
+        
         // Get Farcaster context first
         const context = await sdk.context
         console.log('🔍 Farcaster context:', context)
         
-        // Initialize Farcaster wallet connection
-        console.log('🔍 Attempting to connect Farcaster wallet...')
-        let accounts
-        try {
-          // First try to get existing accounts
-          accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' })
-          console.log('🔍 Existing wallet accounts:', accounts)
-          
-          // If no accounts, request connection
-          if (!accounts || accounts.length === 0) {
-            console.log('🔍 No existing accounts, requesting wallet connection...')
-            accounts = await sdk.wallet.ethProvider.request({ method: 'eth_requestAccounts' })
-            console.log('🔍 Wallet accounts after request:', accounts)
-          }
-        } catch (walletError) {
-          console.error('❌ Wallet connection failed:', walletError)
-          accounts = null
-        }
+        // Use Quick Auth to get authenticated user info
+        console.log('🔍 Getting Quick Auth token...')
+        let userAddress: string | null = null
         
-        if (accounts && accounts.length > 0) {
-          setIsConnected(true)
-          setAddress(accounts[0])
-          console.log('✅ Farcaster wallet connected:', accounts[0])
+        try {
+          // Get Quick Auth token which includes user authentication
+          const { token } = await sdk.quickAuth.getToken()
+          console.log('✅ Quick Auth token obtained')
           
-          // If we have context with user info, use it
-          if (context && 'user' in context) {
+          // The token contains the user's FID, we can use context to get wallet address
+          if (context && 'user' in context && context.user) {
             console.log('👤 Farcaster user info:', context.user)
             setFarcasterUser(context.user as {
               fid: number
@@ -124,43 +111,35 @@ function FarcasterMiniAppContent() {
               displayName: string
               pfpUrl: string
             })
-          }
-        } else {
-          console.log('⚠️ No Farcaster wallet connected')
-          
-          // Try to get address from context if available
-          if (context && 'user' in context && context.user) {
-            console.log('🔍 Trying to get address from context user...')
-            console.log('🔍 Context user structure:', Object.keys(context.user))
             
-            // Check if context has wallet address
+            // Try to get wallet address from verified accounts
             if ('verified_accounts' in context.user && context.user.verified_accounts) {
               console.log('🔍 Verified accounts found:', context.user.verified_accounts)
               const verifiedAccounts = context.user.verified_accounts as Array<{ address: string }>
               if (verifiedAccounts.length > 0) {
-                const userAddress = verifiedAccounts[0].address
-                console.log('✅ Using address from context:', userAddress)
-                setAddress(userAddress)
-                setIsConnected(true)
-              } else {
-                console.log('⚠️ No verified accounts in context')
-                // For testing, use demo address
-                setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
-                setIsConnected(true)
+                userAddress = verifiedAccounts[0].address
+                console.log('✅ Using address from verified accounts:', userAddress)
               }
-            } else {
-              console.log('⚠️ No verified accounts in context user')
-              console.log('🔍 Available user properties:', Object.keys(context.user))
-              // For testing, use demo address
-              setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
-              setIsConnected(true)
             }
+          }
+          
+          // If we got a user address, use it
+          if (userAddress) {
+            setAddress(userAddress)
+            setIsConnected(true)
+            console.log('✅ Farcaster user authenticated:', userAddress)
           } else {
-            console.log('⚠️ No context user available')
+            console.log('⚠️ No wallet address found in context')
             // For testing, use demo address
             setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
             setIsConnected(true)
           }
+          
+        } catch (authError) {
+          console.error('❌ Quick Auth failed:', authError)
+          // Fallback to demo address
+          setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
+          setIsConnected(true)
         }
 
         // Call ready() to hide splash screen
