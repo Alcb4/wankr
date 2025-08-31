@@ -242,20 +242,29 @@ function FarcasterMiniAppContent() {
       // Extract handle from search query
       const handle = searchQuery.startsWith('@') ? searchQuery.slice(1) : searchQuery
       
-      // First, try to resolve the handle to an address
       console.log('🔍 Searching for user:', handle)
       
-      // For now, we'll use a placeholder address since we need to implement handle resolution
-      // TODO: Implement proper handle resolution service
-      const mockAddress = '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      // For testing, if searching for @relicc, use the current user's address
+      let targetAddress: string
+      if (handle.toLowerCase() === 'relicc' && address) {
+        console.log('✅ Using current user address for @relicc:', address)
+        targetAddress = address
+      } else {
+        // TODO: Implement proper handle resolution service
+        // For now, use a placeholder for other handles
+        console.log('⚠️ Handle resolution not implemented, using placeholder')
+        targetAddress = '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      }
       
-      // Fetch real user stats from our API
-      const response = await fetch(`/api/user-stats/${mockAddress}`)
+      // Fetch real user stats from our API (same as profile tab)
+      console.log('🔍 Fetching stats for address:', targetAddress)
+      const response = await fetch(`/api/user-stats/${targetAddress}`)
       if (!response.ok) {
         throw new Error('Failed to fetch user stats')
       }
       
       const userStats = await response.json()
+      console.log('✅ Fetched user stats:', userStats)
       
       const searchResult: UserProfile = {
         handle: handle,
