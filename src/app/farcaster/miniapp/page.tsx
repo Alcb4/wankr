@@ -56,6 +56,7 @@ function FarcasterMiniAppContent() {
   const [address, setAddress] = useState<string>('')
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [isAppReady, setIsAppReady] = useState(false)
+  const [isPreloadingProfile, setIsPreloadingProfile] = useState(false)
   const [farcasterUser, setFarcasterUser] = useState<{
     fid: number
     username: string
@@ -145,6 +146,9 @@ function FarcasterMiniAppContent() {
             setAddress(userAddress)
             setIsConnected(true)
             console.log('✅ Farcaster user authenticated:', userAddress)
+            
+            // Preload profile data immediately
+            preloadProfileData(userAddress)
           } else {
             console.log('⚠️ No wallet address found in context')
             
@@ -173,6 +177,9 @@ function FarcasterMiniAppContent() {
               setAddress(userAddress)
               setIsConnected(true)
               console.log('✅ Farcaster user authenticated:', userAddress)
+              
+              // Preload profile data immediately
+              preloadProfileData(userAddress)
             }
           }
           
@@ -221,6 +228,29 @@ function FarcasterMiniAppContent() {
       console.error('Failed to load profile:', error)
     } finally {
       setIsLoadingProfile(false)
+    }
+  }
+
+  // Preload profile data immediately after wallet authentication
+  const preloadProfileData = async (userAddress: string) => {
+    if (!userAddress || isPreloadingProfile) return
+    
+    setIsPreloadingProfile(true)
+    console.log('🚀 Preloading profile data for:', userAddress)
+    
+    try {
+      const response = await fetch(`/api/user-stats/${userAddress}`)
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ Profile data preloaded successfully')
+        // The useUserStats hook will pick up this data when address is set
+      } else {
+        console.warn('⚠️ Profile preload failed:', response.status)
+      }
+    } catch (error) {
+      console.error('❌ Profile preload error:', error)
+    } finally {
+      setIsPreloadingProfile(false)
     }
   }
 
@@ -327,6 +357,18 @@ function FarcasterMiniAppContent() {
                 <div className="flex items-center gap-2 text-red-400 text-sm">
                   <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></div>
                   <span>Connecting to Farcaster...</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Preloading Indicator - Show when preloading profile data */}
+          {isPreloadingProfile && (
+            <div className="px-4 py-1 bg-blue-500/10 border-b border-blue-500/20">
+              <div className="max-w-md mx-auto">
+                <div className="flex items-center gap-2 text-blue-400 text-xs">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></div>
+                  <span>Preloading profile data...</span>
                 </div>
               </div>
             </div>
