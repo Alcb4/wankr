@@ -13,6 +13,7 @@ import { Send, User, Search, Trophy, TrendingUp, TrendingDown } from 'lucide-rea
 
 // Import Farcaster Mini App SDK
 import { sdk } from '@farcaster/miniapp-sdk'
+import { addressResolutionService } from '../../services/addressResolutionService'
 
 interface FrameContext {
   targetAddress?: string
@@ -244,16 +245,22 @@ function FarcasterMiniAppContent() {
       
       console.log('🔍 Searching for user:', handle)
       
-      // For testing, if searching for @relicc, use the current user's address
+      // Resolve handle to address using address resolution service
       let targetAddress: string
-      if (handle.toLowerCase() === 'relicc' && address) {
-        console.log('✅ Using current user address for @relicc:', address)
-        targetAddress = address
-      } else {
-        // TODO: Implement proper handle resolution service
-        // For now, use a placeholder for other handles
-        console.log('⚠️ Handle resolution not implemented, using placeholder')
-        targetAddress = '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      try {
+        const resolution = await addressResolutionService.resolveHandle(handle, 'farcaster')
+        targetAddress = resolution.address
+        console.log('✅ Resolved handle to address:', handle, '→', targetAddress)
+      } catch (resolutionError) {
+        console.error('❌ Handle resolution failed:', resolutionError)
+        
+        // Fallback: if searching for @relicc, use current user's address
+        if (handle.toLowerCase() === 'relicc' && address) {
+          console.log('✅ Using current user address for @relicc:', address)
+          targetAddress = address
+        } else {
+          throw new Error(`Could not resolve handle @${handle} to an address`)
+        }
       }
       
       // Fetch real user stats from our API (same as profile tab)
