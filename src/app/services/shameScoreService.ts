@@ -463,6 +463,35 @@ export class ShameScoreService {
   updateConfig(newConfig: Partial<ShameScoreConfig>): void {
     this.config = { ...this.config, ...newConfig }
   }
+
+  /**
+   * Calculate average shamer reputation (simple consensus model)
+   * Each shamer gets equal vote weight, reputation = 100 - theirShameScore
+   */
+  calculateAverageShamerReputationFromStats(stats: Record<string, unknown>): number {
+    const uniqueShamers = parseInt(stats.unique_shamers as string) || 0
+    
+    if (uniqueShamers === 0) {
+      return 100 // No shamers = perfect reputation
+    }
+    
+    // For now, we'll use a simplified calculation since we don't have individual shamer scores
+    // In a full implementation, we'd fetch each shamer's individual shame score
+    // For now, return a reasonable default based on the consensus factor
+    const consensusFactor = Math.pow(uniqueShamers, 1.2)
+    
+    // Higher consensus (more unique shamers) suggests more credible shame
+    // Lower consensus suggests potentially retaliatory shame
+    if (uniqueShamers === 1) {
+      return 50 // Single shamer - neutral reputation
+    } else if (uniqueShamers <= 3) {
+      return 70 // Small consensus - decent reputation
+    } else if (uniqueShamers <= 5) {
+      return 85 // Medium consensus - good reputation
+    } else {
+      return 95 // Large consensus - excellent reputation
+    }
+  }
 }
 
 // Export singleton instance

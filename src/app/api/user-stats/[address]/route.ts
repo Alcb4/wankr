@@ -56,7 +56,7 @@ export async function GET(
         verificationBadge: shameScoreService.getVerificationBadgeFromStats(preCalculatedStats),
         transactionCount: parseInt(preCalculatedStats.total_transactions as string) || 0,
         uniqueShamers: parseInt(preCalculatedStats.unique_shamers as string) || 0,
-        averageShamerReputation: 0, // TODO: Calculate from data
+        averageShamerReputation: shameScoreService.calculateAverageShamerReputationFromStats(preCalculatedStats),
         recentShameActivity: parseInt(preCalculatedStats.recent_shames_received as string) || 0
       }
 
