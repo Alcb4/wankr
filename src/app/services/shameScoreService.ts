@@ -134,25 +134,24 @@ export class ShameScoreService {
    * Calculate shame-free streak in days
    */
   private calculateShameFreeStreak(userAddress: string, transactions: ShameTransaction[], now: number): number {
-    // Get all transactions involving this user (sent or received)
-    const userTransactions = transactions.filter(tx => 
-      tx.from.toLowerCase() === userAddress.toLowerCase() || 
+    // Get only RECEIVED transactions (shame received)
+    const receivedTransactions = transactions.filter(tx => 
       tx.to.toLowerCase() === userAddress.toLowerCase()
     )
     
-    if (userTransactions.length === 0) {
-      // No transactions = infinite shame-free streak
+    if (receivedTransactions.length === 0) {
+      // No shame received = infinite shame-free streak
       return 999
     }
     
     // Sort by timestamp (newest first)
-    const sortedTransactions = userTransactions.sort((a, b) => b.timestamp - a.timestamp)
-    const lastTransaction = sortedTransactions[0]
+    const sortedTransactions = receivedTransactions.sort((a, b) => b.timestamp - a.timestamp)
+    const lastShameReceived = sortedTransactions[0]
     
-    // Calculate days since last transaction
-    const daysSinceLastTransaction = Math.floor((now - lastTransaction.timestamp) / (1000 * 60 * 60 * 24))
+    // Calculate days since last shame received
+    const daysSinceLastShame = Math.floor((now - lastShameReceived.timestamp) / (1000 * 60 * 60 * 24))
     
-    return Math.max(0, daysSinceLastTransaction)
+    return Math.max(0, daysSinceLastShame)
   }
 
   /**

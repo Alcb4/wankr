@@ -239,8 +239,43 @@ function FarcasterMiniAppContent() {
     
     setIsSearching(true)
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Extract handle from search query
+      const handle = searchQuery.startsWith('@') ? searchQuery.slice(1) : searchQuery
       
+      // First, try to resolve the handle to an address
+      console.log('🔍 Searching for user:', handle)
+      
+      // For now, we'll use a placeholder address since we need to implement handle resolution
+      // TODO: Implement proper handle resolution service
+      const mockAddress = '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6'
+      
+      // Fetch real user stats from our API
+      const response = await fetch(`/api/user-stats/${mockAddress}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch user stats')
+      }
+      
+      const userStats = await response.json()
+      
+      const searchResult: UserProfile = {
+        handle: handle,
+        address: userStats.address,
+        shameScore: userStats.shameScore,
+        verificationLevel: userStats.verificationLevel,
+        shameFreeStreak: userStats.shameFreeStreak,
+        totalShamesSent: userStats.totalShamesSent,
+        totalShamesReceived: userStats.totalShamesReceived,
+        wankrSent: userStats.wankrSent,
+        wankrReceived: userStats.wankrReceived,
+        lastActivity: userStats.lastActivity,
+        verificationBadge: userStats.verificationBadge,
+      }
+      
+      setSearchResults(searchResult)
+      console.log('✅ Search result:', searchResult)
+    } catch (error) {
+      console.error('Search error:', error)
+      // Fallback to mock data if API fails
       const mockAddress = '0x' + Math.random().toString(16).slice(2, 42)
       const mockTransactions = Array.from({ length: Math.floor(Math.random() * 20) }, () => ({
         from: Math.random() > 0.6 ? mockAddress : '0x' + Math.random().toString(16).slice(2, 42),
@@ -268,8 +303,6 @@ function FarcasterMiniAppContent() {
       }
       
       setSearchResults(searchResult)
-    } catch (error) {
-      console.error('Search error:', error)
     } finally {
       setIsSearching(false)
     }
