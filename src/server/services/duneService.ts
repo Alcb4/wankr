@@ -421,12 +421,36 @@ export class DuneService {
   /**
    * Get user's aggregated stats (for performance)
    * This provides pre-calculated stats to avoid client-side processing
+   * Uses hybrid approach: cached results first, fresh query as fallback
    */
   async getUserStats(userAddress: string): Promise<Record<string, unknown> | null> {
     try {
       console.log(`🔍 Fetching stats for user: ${userAddress.slice(0, 6)}...`)
       
-      // Use parameterized query with user address
+      // First try cached result (fast - under 1 second)
+      console.log('🚀 Trying cached result first...')
+      const cachedResult = await this.duneClient.getLatestResult({
+        queryId: this.USER_STATS_QUERY_ID
+      })
+      
+      if (cachedResult?.result?.rows) {
+        // Filter cached results for this specific user
+        const userRow = cachedResult.result.rows.find(row => 
+          (row as any).address?.toLowerCase() === userAddress.toLowerCase()
+        )
+        
+        if (userRow) {
+          console.log('✅ Using cached user stats data (fast)')
+          return userRow
+        } else {
+          console.log('⚠️ User not found in cached data, trying fresh query...')
+        }
+      } else {
+        console.log('⚠️ No cached data available, trying fresh query...')
+      }
+      
+      // Fallback to fresh query (slow but accurate - may take 30-40 seconds)
+      console.log('🔄 Executing fresh Dune query...')
       const result = await this.duneClient.runQuery({
         queryId: this.USER_STATS_QUERY_ID,
         query_parameters: [
@@ -434,28 +458,35 @@ export class DuneService {
         ]
       })
       
-      if (!result.result || !result.result.rows || result.result.rows.length === 0) {
-        console.log('❌ No user stats data from Dune API')
-        return null
+      if (result.result?.rows && result.result.rows.length > 0) {
+        console.log('✅ Fresh query successful, returning user stats')
+        return result.result.rows[0]
       }
       
-      console.log(`📊 Found user stats for ${userAddress.slice(0, 6)}...`)
-      return result.result.rows[0]
-    } catch (error) {
-      console.error('Error fetching user stats from Dune:', error)
+      console.log('❌ No user stats data from fresh query')
+      return null
       
-      // If rate limited, try to get cached result
+    } catch (error) {
+      console.error('Error fetching user stats:', error)
+      
+      // If rate limited, try to get cached result as last resort
       if (typeof error === 'object' && error !== null && 'message' in error && 
           typeof error.message === 'string' && 
           (error.message.includes('429') || error.message.includes('Too many requests'))) {
-        console.log('🔄 Rate limited, trying cached result...')
+        console.log('🔄 Rate limited, trying cached result as last resort...')
         try {
           const cachedResult = await this.duneClient.getLatestResult({
             queryId: this.USER_STATS_QUERY_ID
           })
           if (cachedResult && cachedResult.result && cachedResult.result.rows) {
-            console.log('✅ Using cached user stats data')
-            return cachedResult.result.rows[0]
+            // Filter for this user
+            const userRow = cachedResult.result.rows.find(row => 
+              (row as any).address?.toLowerCase() === userAddress.toLowerCase()
+            )
+            if (userRow) {
+              console.log('✅ Using cached user stats data (rate limit fallback)')
+              return userRow
+            }
           }
         } catch (cacheError) {
           console.error('Error fetching cached user stats:', cacheError)
