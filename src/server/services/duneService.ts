@@ -436,7 +436,7 @@ export class DuneService {
       if (cachedResult?.result?.rows) {
         // Filter cached results for this specific user
         const userRow = cachedResult.result.rows.find(row => 
-          (row as any).address?.toLowerCase() === userAddress.toLowerCase()
+          (row as Record<string, unknown>).address?.toString().toLowerCase() === userAddress.toLowerCase()
         )
         
         if (userRow) {
@@ -481,7 +481,7 @@ export class DuneService {
           if (cachedResult && cachedResult.result && cachedResult.result.rows) {
             // Filter for this user
             const userRow = cachedResult.result.rows.find(row => 
-              (row as any).address?.toLowerCase() === userAddress.toLowerCase()
+              (row as Record<string, unknown>).address?.toString().toLowerCase() === userAddress.toLowerCase()
             )
             if (userRow) {
               console.log('✅ Using cached user stats data (rate limit fallback)')

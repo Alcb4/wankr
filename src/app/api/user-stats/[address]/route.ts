@@ -52,7 +52,12 @@ export async function GET(
         totalShamesReceived: parseInt(preCalculatedStats.shames_received as string) || 0,
         wankrSent: Math.round(parseFloat((preCalculatedStats.total_wankr_sent as string) || '0')),
         wankrReceived: Math.round(parseFloat((preCalculatedStats.total_wankr_received as string) || '0')),
-        lastActivity: preCalculatedStats.last_activity ? shameScoreService.formatLastActivity(new Date(preCalculatedStats.last_activity as string).getTime()) : 'Never',
+        lastActivity: preCalculatedStats.last_received_activity ? 
+          shameScoreService.formatLastActivity(new Date(preCalculatedStats.last_received_activity as string).getTime()) : 
+          'Never',
+        lastSentActivity: preCalculatedStats.last_sent_activity ? 
+          shameScoreService.formatLastActivity(new Date(preCalculatedStats.last_sent_activity as string).getTime()) : 
+          'Never',
         verificationBadge: shameScoreService.getVerificationBadgeFromStats(preCalculatedStats),
         transactionCount: parseInt(preCalculatedStats.total_transactions as string) || 0,
         uniqueShamers: parseInt(preCalculatedStats.unique_shamers as string) || 0,
@@ -92,6 +97,7 @@ export async function GET(
         wankrSent: 0,
         wankrReceived: 0,
         lastActivity: 'Never',
+        lastSentActivity: 'Never',
         verificationBadge: false,
         transactionCount: 0,
         uniqueShamers: 0,
