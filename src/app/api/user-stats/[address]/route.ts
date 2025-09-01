@@ -111,6 +111,12 @@ export async function GET(
       transactionHash: tx.evt_tx_hash || ''
     }))
 
+    // Calculate last sent activity separately
+    const sentTransactions = formattedTransactions.filter(tx => tx.from.toLowerCase() === address.toLowerCase())
+    const lastSentActivity = sentTransactions.length > 0 
+      ? Math.max(...sentTransactions.map(tx => tx.timestamp))
+      : 0
+
     // Calculate stats using the shame score service
     const accountCreatedAt = Date.now() - (365 * 24 * 60 * 60 * 1000) // Assume 1 year ago
     const stats = shameScoreService.calculateUserStats(
@@ -137,6 +143,7 @@ export async function GET(
       wankrSent: Math.round(parseFloat(stats.totalWankrSent)),
       wankrReceived: Math.round(parseFloat(stats.totalWankrReceived)),
       lastActivity: shameScoreService.formatLastActivity(stats.lastActivity),
+      lastSentActivity: lastSentActivity > 0 ? shameScoreService.formatLastActivity(lastSentActivity) : 'Never',
       verificationBadge,
       transactionCount: formattedTransactions.length,
       uniqueShamers: stats.uniqueShamers,

@@ -13,6 +13,7 @@ export interface UserStats {
   wankrSent: number
   wankrReceived: number
   lastActivity: string
+  lastSentActivity: string
   verificationBadge: boolean
   transactionCount: number
   uniqueShamers: number
