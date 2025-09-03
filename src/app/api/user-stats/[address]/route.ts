@@ -47,7 +47,9 @@ export async function GET(
         handleSource: handleResolution.source,
         shameScore: shameScoreService.calculateShameScoreFromStats(preCalculatedStats),
         verificationLevel: shameScoreService.getVerificationLevelFromStats(preCalculatedStats),
-        shameFreeStreak: parseInt(preCalculatedStats.shame_free_days as string) || 0,
+        shameFreeStreak: preCalculatedStats.last_received_activity ? 
+          Math.floor((Date.now() - new Date(preCalculatedStats.last_received_activity as string).getTime()) / (1000 * 60 * 60 * 24)) : 
+          999,
         totalShamesSent: parseInt(preCalculatedStats.shames_sent as string) || 0,
         totalShamesReceived: parseInt(preCalculatedStats.shames_received as string) || 0,
         wankrSent: Math.round(parseFloat((preCalculatedStats.total_wankr_sent as string) || '0')),

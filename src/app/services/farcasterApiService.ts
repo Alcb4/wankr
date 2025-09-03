@@ -38,11 +38,11 @@ interface FarcasterUser {
  * Handles post/cast context extraction and user information
  */
 export class FarcasterApiService {
-  private neynarApiKey: string | undefined
-  private baseUrl = 'https://api.neynar.com/v2'
+  private farcasterApiKey: string | undefined
+  private baseUrl = 'https://api.farcaster.xyz'
 
   constructor() {
-    this.neynarApiKey = process.env.NEXT_PUBLIC_NEYNAR_API_KEY || process.env.NEYNAR_API_KEY
+    this.farcasterApiKey = process.env.FARCASTER_API_KEY
   }
 
   /**
@@ -50,15 +50,15 @@ export class FarcasterApiService {
    * This would be called when a Frame is clicked to get the post author
    */
   async getPostById(postId: string): Promise<FarcasterPost | null> {
-    if (!this.neynarApiKey) {
-      console.warn('Neynar API key not configured')
+    if (!this.farcasterApiKey) {
+      console.warn('Farcaster API key not configured')
       return null
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/farcaster/cast?identifier=${postId}&type=url`, {
+      const response = await fetch(`${this.baseUrl}/v2/cast?identifier=${postId}&type=url`, {
         headers: {
-          'x-api-key': this.neynarApiKey,
+          'Authorization': `Bearer ${this.farcasterApiKey}`,
           'Content-Type': 'application/json'
         }
       })
@@ -76,8 +76,8 @@ export class FarcasterApiService {
           author: {
             fid: data.cast.author.fid,
             username: data.cast.author.username,
-            displayName: data.cast.author.display_name,
-            address: data.cast.author.verified_addresses?.eth_addresses?.[0] || ''
+            displayName: data.cast.author.displayName,
+            address: data.cast.author.verifiedAddresses?.eth?.[0] || ''
           },
           content: data.cast.text,
           timestamp: new Date(data.cast.timestamp).getTime()
@@ -95,15 +95,15 @@ export class FarcasterApiService {
    * Get cast information by cast hash
    */
   async getCastByHash(castHash: string): Promise<FarcasterCast | null> {
-    if (!this.neynarApiKey) {
-      console.warn('Neynar API key not configured')
+    if (!this.farcasterApiKey) {
+      console.warn('Farcaster API key not configured')
       return null
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/farcaster/cast?identifier=${castHash}&type=hash`, {
+      const response = await fetch(`${this.baseUrl}/v2/cast?identifier=${castHash}&type=hash`, {
         headers: {
-          'x-api-key': this.neynarApiKey,
+          'Authorization': `Bearer ${this.farcasterApiKey}`,
           'Content-Type': 'application/json'
         }
       })
@@ -121,8 +121,8 @@ export class FarcasterApiService {
           author: {
             fid: data.cast.author.fid,
             username: data.cast.author.username,
-            displayName: data.cast.author.display_name,
-            address: data.cast.author.verified_addresses?.eth_addresses?.[0] || ''
+            displayName: data.cast.author.displayName,
+            address: data.cast.author.verifiedAddresses?.eth?.[0] || ''
           },
           content: data.cast.text,
           timestamp: new Date(data.cast.timestamp).getTime()
@@ -140,15 +140,15 @@ export class FarcasterApiService {
    * Get user information by FID
    */
   async getUserByFid(fid: string): Promise<FarcasterUser | null> {
-    if (!this.neynarApiKey) {
-      console.warn('Neynar API key not configured')
+    if (!this.farcasterApiKey) {
+      console.warn('Farcaster API key not configured')
       return null
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/farcaster/user?fid=${fid}`, {
+      const response = await fetch(`${this.baseUrl}/v2/user?fid=${fid}`, {
         headers: {
-          'x-api-key': this.neynarApiKey,
+          'Authorization': `Bearer ${this.farcasterApiKey}`,
           'Content-Type': 'application/json'
         }
       })
@@ -164,9 +164,9 @@ export class FarcasterApiService {
         return {
           fid: data.user.fid,
           username: data.user.username,
-          displayName: data.user.display_name,
-          address: data.user.verified_addresses?.eth_addresses?.[0] || '',
-          avatar: data.user.pfp_url,
+          displayName: data.user.displayName,
+          address: data.user.verifiedAddresses?.eth?.[0] || '',
+          avatar: data.user.pfp?.url,
           verified: data.user.verified
         }
       }
@@ -182,15 +182,15 @@ export class FarcasterApiService {
    * Get user information by username
    */
   async getUserByUsername(username: string): Promise<FarcasterUser | null> {
-    if (!this.neynarApiKey) {
-      console.warn('Neynar API key not configured')
+    if (!this.farcasterApiKey) {
+      console.warn('Farcaster API key not configured')
       return null
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/farcaster/user?username=${username}`, {
+      const response = await fetch(`${this.baseUrl}/v2/user?username=${username}`, {
         headers: {
-          'x-api-key': this.neynarApiKey,
+          'Authorization': `Bearer ${this.farcasterApiKey}`,
           'Content-Type': 'application/json'
         }
       })
@@ -206,9 +206,9 @@ export class FarcasterApiService {
         return {
           fid: data.user.fid,
           username: data.user.username,
-          displayName: data.user.display_name,
-          address: data.user.verified_addresses?.eth_addresses?.[0] || '',
-          avatar: data.user.pfp_url,
+          displayName: data.user.displayName,
+          address: data.user.verifiedAddresses?.eth?.[0] || '',
+          avatar: data.user.pfp?.url,
           verified: data.user.verified
         }
       }
@@ -222,39 +222,70 @@ export class FarcasterApiService {
 
   /**
    * Extract author information from post context
-   * This is the main method used by Frames to get the target
+   * This is the main function used by Frame context extraction
    */
-  async extractAuthorFromContext(postId?: string, castId?: string): Promise<{
-    address: string
-    handle: string
-    displayName: string
-    fid: string
-  } | null> {
-    try {
-      let post: FarcasterPost | FarcasterCast | null = null
-
-      if (postId) {
-        post = await this.getPostById(postId)
-      } else if (castId) {
-        post = await this.getCastByHash(castId)
-      }
-
+  async extractAuthorFromContext(postId?: string, castId?: string): Promise<FarcasterUser | null> {
+    if (postId) {
+      const post = await this.getPostById(postId)
       if (post) {
         return {
-          address: post.author.address,
-          handle: post.author.username,
+          fid: post.author.fid,
+          username: post.author.username,
           displayName: post.author.displayName,
-          fid: post.author.fid
+          address: post.author.address
         }
+      }
+    }
+
+    if (castId) {
+      const cast = await this.getCastByHash(castId)
+      if (cast) {
+        return {
+          fid: cast.author.fid,
+          username: cast.author.username,
+          displayName: cast.author.displayName,
+          address: cast.author.address
+        }
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * Get user's primary Ethereum address
+   */
+  async getPrimaryAddress(fid: string): Promise<string | null> {
+    if (!this.farcasterApiKey) {
+      console.warn('Farcaster API key not configured')
+      return null
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/fc/primary-address?fid=${fid}&protocol=ethereum`, {
+        headers: {
+          'Authorization': `Bearer ${this.farcasterApiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        console.error(`Farcaster API error: ${response.status}`)
+        return null
+      }
+
+      const data = await response.json()
+      
+      if (data.result?.address) {
+        return data.result.address
       }
 
       return null
     } catch (error) {
-      console.error('Error extracting author from context:', error)
+      console.error('Error fetching primary address:', error)
       return null
     }
   }
 }
 
-// Export singleton instance
 export const farcasterApiService = new FarcasterApiService()
