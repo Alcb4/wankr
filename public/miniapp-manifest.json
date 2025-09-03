@@ -4,8 +4,7 @@
   "description": "Send shame tokens and verify authenticity on Base blockchain. Track shame history for digital identity verification.",
   "version": "1.0.0",
   "author": {
-    "name": "WANKR Team",
-    "website": "https://wankr.xyz"
+    "name": "WANKR Team"
   },
   "category": "social",
   "tags": ["shame", "verification", "social", "base", "blockchain"],
@@ -25,8 +24,8 @@
       "description": "Shame analytics and verification"
     }
   ],
-  "homeUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp/clean",
-  "embedUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp/clean",
+  "homeUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp",
+  "embedUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp",
   "permissions": [
     "user.read",
     "wallet.ethereum",
