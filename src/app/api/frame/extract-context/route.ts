@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
         context = {
           ...context,
           targetAddress: authorInfo.address,
-          targetHandle: authorInfo.handle,
+          targetHandle: authorInfo.username,
           targetDisplayName: authorInfo.displayName,
           authorFid: authorInfo.fid,
           source: 'post'
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         context = {
           ...context,
           targetAddress: authorInfo.address,
-          targetHandle: authorInfo.handle,
+          targetHandle: authorInfo.username,
           targetDisplayName: authorInfo.displayName,
           authorFid: authorInfo.fid,
           source: 'post'
