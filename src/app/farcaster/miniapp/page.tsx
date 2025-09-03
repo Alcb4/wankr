@@ -89,6 +89,7 @@ function FarcasterMiniAppContent() {
     const initializeApp = async () => {
       try {
         console.log('🔍 Initializing Farcaster Mini App...')
+        console.log('🔍 Frame context:', frameContext.context)
         
         // Get Farcaster context first
         const context = await sdk.context
@@ -368,6 +369,26 @@ function FarcasterMiniAppContent() {
               </div>
             </div>
           </div>
+
+          {/* Frame Context Banner */}
+          {frameContext.context === 'frame' && (
+            <div className="px-4 py-2 bg-yellow-600/20 border-b border-yellow-500/30">
+              <div className="max-w-md mx-auto">
+                <div className="flex items-center justify-between text-yellow-700 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span>🖼️</span>
+                    <span>Running as Farcaster Frame</span>
+                  </div>
+                  <a 
+                    href="/farcaster/miniapp" 
+                    className="text-yellow-800 underline hover:text-yellow-900 font-medium"
+                  >
+                    Open Full App
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Minimal Connection Indicator - Only show if not connected */}
           {!isConnected && (

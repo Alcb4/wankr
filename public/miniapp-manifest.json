@@ -26,6 +26,7 @@
   ],
   "homeUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp",
   "embedUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp",
+  "frameUrl": "https://wankr-alpha.vercel.app/api/frame",
   "permissions": [
     "user.read",
     "wallet.ethereum",
@@ -44,10 +45,10 @@
     "Track shame history",
     "Blockchain-based verification"
   ],
-  "privacyPolicy": "https://wankr.xyz/privacy",
-  "termsOfService": "https://wankr.xyz/terms",
+  "privacyPolicy": "https://wankr.-alpha.vercel.app/privacy",
+  "termsOfService": "https://wankr-alpha.vercel.app/terms",
   "contact": {
-    "email": "support@wankr.xyz",
-    "twitter": "@wankr_xyz"
+    "email": "swankrshamesmith@gmail.com",
+    "twitter": "@wankergyatt"
   }
 }
