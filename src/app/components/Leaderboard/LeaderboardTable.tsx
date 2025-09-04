@@ -1,8 +1,7 @@
 
 import type { LeaderboardEntry } from '../../config/types'
 import { formatNumber } from '../../utils/formatters'
-import { components, layout } from '../../theme'
-import { useState, useEffect } from 'react'
+import { layout } from '../../theme'
 
 interface LeaderboardTableProps {
   entries: LeaderboardEntry[]

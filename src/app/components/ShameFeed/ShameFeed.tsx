@@ -1,19 +1,19 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useShameFeed } from '../../hooks/useShameFeed'
 import { useRealtimeUpdates } from '../../hooks/useRealtimeUpdates'
 // import { enhancedShameFeedService } from '../../services/enhancedShameFeedService'
 import { ShameItem } from './ShameItem'
 import { Button, Card } from '../ui'
-import { components, layout } from '../../theme'
+import { layout } from '../../theme'
 import { RealtimeStatus } from '../RealtimeStatus/RealtimeStatus'
 
 export function ShameFeed() {
   const { transactions, stats, loading, error, refresh } = useShameFeed()
   
   // Real-time updates
-  const { isConnected, lastUpdate, error: realtimeError } = useRealtimeUpdates({
+  const { lastUpdate } = useRealtimeUpdates({
     subscriptions: ['shame-feed'],
     clientId: 'shame-feed-client'
   })

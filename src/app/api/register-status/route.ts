@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { RegisterService } from '../../../../src/server/services/register'
 import { CheckRegisterService } from '../../../../src/server/services/checkRegister'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const registerService = new RegisterService()
     const checkRegisterService = new CheckRegisterService(registerService)

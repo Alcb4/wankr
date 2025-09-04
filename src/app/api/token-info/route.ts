@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // WANKR token address on Base
 const WANKR_TOKEN_ADDRESS = '0xa207c6e67cea08641503947ac05c65748bb9bb07'
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // DexScreener API endpoint for WANKR token
     const dexScreenerUrl = `https://api.dexscreener.com/latest/dex/tokens/${WANKR_TOKEN_ADDRESS}`

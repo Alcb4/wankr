@@ -84,120 +84,102 @@ function FarcasterMiniAppContent() {
     refresh: refreshLeaderboard
   } = useFarcasterLeaderboard()
 
-  // FIXED: Initialize Farcaster Mini App and call ready()
+  // Initialize Farcaster Mini App with timeout to prevent hanging
   useEffect(() => {
     const initializeApp = async () => {
+      const timeoutId = setTimeout(async () => {
+        console.log('⏰ Initialization timeout - calling ready() anyway')
+        try {
+          await sdk.actions.ready()
+          setIsAppReady(true)
+        } catch (error) {
+          console.error('❌ Failed to call ready() after timeout:', error)
+          setIsAppReady(true) // Set ready anyway to prevent infinite loading
+        }
+      }, 5000) // 5 second timeout
+
       try {
         console.log('🔍 Initializing Farcaster Mini App...')
-        console.log('🔍 Frame context:', frameContext.context)
         
-        // Get Farcaster context first
-        const context = await sdk.context
+        // Get Farcaster context with timeout
+        const contextPromise = sdk.context
+        const context = await Promise.race([
+          contextPromise,
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Context timeout')), 3000)
+          )
+        ])
+        
         console.log('🔍 Farcaster context:', context)
         
-        // Use Quick Auth to get authenticated user info
-        console.log('🔍 Getting Quick Auth token...')
-        let userAddress: string | null = null
+        // Set user info if available
+        if (context?.user) {
+          setFarcasterUser({
+            fid: context.user.fid,
+            username: context.user.username || 'unknown',
+            displayName: context.user.displayName || 'Unknown User',
+            pfpUrl: context.user.pfpUrl || ''
+          })
+        }
         
+        // Try to get user address with timeout
         try {
-          // Get Quick Auth token which includes user authentication
-          const { token } = await sdk.quickAuth.getToken()
+          const authPromise = sdk.quickAuth.getToken()
+          const authResult = await Promise.race([
+            authPromise,
+            new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Auth timeout')), 2000)
+            )
+          ])
+          const { token } = authResult
+          
           console.log('✅ Quick Auth token obtained')
           
-          // The token contains the user's FID, we can use context to get wallet address
-          if (context && 'user' in context && context.user) {
-            console.log('👤 Farcaster user info:', context.user)
-            console.log('🔍 Full context structure:', Object.keys(context))
-            console.log('🔍 User object structure:', Object.keys(context.user))
-            console.log('🔍 User object full:', JSON.stringify(context.user, null, 2))
-            
-            setFarcasterUser(context.user as {
-              fid: number
-              username: string
-              displayName: string
-              pfpUrl: string
-            })
-            
-            // Try to get wallet address from verified accounts
-            if ('verified_accounts' in context.user && context.user.verified_accounts) {
-              console.log('🔍 Verified accounts found:', context.user.verified_accounts)
-              const verifiedAccounts = context.user.verified_accounts as Array<{ address: string }>
-              if (verifiedAccounts.length > 0) {
-                userAddress = verifiedAccounts[0].address
-                console.log('✅ Using address from verified accounts:', userAddress)
-              }
-            } else {
-              console.log('🔍 No verified_accounts property found')
-              // Try other possible properties
-              if ('custody_address' in context.user) {
-                console.log('🔍 Found custody_address:', context.user.custody_address)
-                userAddress = context.user.custody_address as string
-              } else if ('primary_address' in context.user) {
-                console.log('🔍 Found primary_address:', context.user.primary_address)
-                userAddress = context.user.primary_address as string
-              } else if ('address' in context.user) {
-                console.log('🔍 Found address:', context.user.address)
-                userAddress = context.user.address as string
-              }
-            }
+          // Try to extract address from context
+          let userAddress: string | null = null
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const user = context?.user as any
+          if (user?.verified_accounts?.[0]?.address) {
+            userAddress = user.verified_accounts[0].address
+          } else if (user?.custody_address) {
+            userAddress = user.custody_address
           }
           
-          // If we got a user address, use it
           if (userAddress) {
             setAddress(userAddress)
             setIsConnected(true)
             console.log('✅ Farcaster user authenticated:', userAddress)
           } else {
-            console.log('⚠️ No wallet address found in context')
-            
-            // Fallback: Try to get primary address from Farcaster API using FID
-            if (context.user && 'fid' in context.user) {
-              console.log('🔍 Attempting to fetch primary address from Farcaster API...')
-              try {
-                const response = await fetch(`https://api.farcaster.xyz/fc/primary-address?fid=${context.user.fid}&protocol=ethereum`)
-                if (response.ok) {
-                  const data = await response.json()
-                  if (data.result && data.result.address) {
-                    userAddress = data.result.address.address
-                    console.log('✅ Got primary address from API:', userAddress)
-                  }
-                }
-              } catch (apiError) {
-                console.error('❌ Failed to fetch primary address from API:', apiError)
-              }
-            }
-            
-            // For testing, use demo address
-            if (!userAddress) {
-              setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
-              setIsConnected(true)
-            } else {
-              setAddress(userAddress)
-              setIsConnected(true)
-              console.log('✅ Farcaster user authenticated:', userAddress)
-            }
+            // Use demo address for testing
+            setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
+            setIsConnected(true)
+            console.log('✅ Using demo address for testing')
           }
           
         } catch (authError) {
-          console.error('❌ Quick Auth failed:', authError)
-          // Fallback to demo address
+          console.log('⚠️ Auth failed, using demo address:', authError)
           setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
           setIsConnected(true)
         }
 
-        // Call ready() to hide splash screen
+        // Clear timeout and call ready()
+        clearTimeout(timeoutId)
         await sdk.actions.ready()
         setIsAppReady(true)
         console.log('✅ Mini App ready - splash screen hidden')
         
       } catch (error) {
         console.error('❌ Failed to initialize Mini App:', error)
-        // Still call ready() even if wallet connection fails
+        clearTimeout(timeoutId)
+        
+        // Always call ready() to prevent infinite loading
         try {
           await sdk.actions.ready()
           setIsAppReady(true)
+          console.log('✅ Mini App ready (fallback)')
         } catch (readyError) {
           console.error('❌ Failed to call ready():', readyError)
+          setIsAppReady(true) // Set ready anyway
         }
       }
     }
@@ -339,6 +321,21 @@ function FarcasterMiniAppContent() {
       case 'verified': return '✓'
       default: return '❓'
     }
+  }
+
+  // Show loading state while app initializes
+  if (!isAppReady) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex flex-col items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div>
+            <h2 className="text-xl font-bold text-primary">WANKR</h2>
+            <p className="text-muted-foreground">Loading Mini App...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
