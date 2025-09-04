@@ -1,4 +1,9 @@
 {
+  "accountAssociation": {
+    "header": "eyJmaWQiOjg4Mjc1MSwidHlwZSI6ImF1dGgiLCJrZXkiOiIweDY4M2QxYThlNzg4RWE4YWVhYzAwNDI3ODA3MkExZDE5QzQzYzE0ZkQifQ",
+    "payload": "eyJkb21haW4iOiJ3YW5rci1hbHBoYS52ZXJjZWwuYXBwIn0",
+    "signature": "m5hCg8x9Exnt6CzpzkpwkPjLVGhEWZjTDFoDNRn4LIBJ+zOWjjnH+lotwcF/uHGZct5ttBLDxteC/cpGBpMwCxw="
+  },
   "miniapp": {
     "version": "1",
     "name": "WANKR Shame & Verification",
