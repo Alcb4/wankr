@@ -1,0 +1,28 @@
+{
+  "miniapp": {
+    "version": "1",
+    "name": "WANKR Shame & Verification",
+    "iconUrl": "https://wankr-alpha.vercel.app/wankr-logo.jpg",
+    "homeUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp",
+    "splashImageUrl": "https://wankr-alpha.vercel.app/wankr-logo.jpg",
+    "splashBackgroundColor": "#1e1b4b",
+    "subtitle": "Shame economy on Base",
+    "description": "Send shame tokens and verify authenticity on Base blockchain. Track shame history for digital identity verification.",
+    "primaryCategory": "social",
+    "tags": [
+      "shame",
+      "verification",
+      "social",
+      "base",
+      "blockchain"
+    ],
+    "requiredChains": [
+      "eip155:8453"
+    ],
+    "requiredCapabilities": [
+      "user.read",
+      "wallet.ethereum"
+    ],
+    "canonicalDomain": "wankr-alpha.vercel.app"
+  }
+}
