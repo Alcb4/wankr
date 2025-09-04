@@ -16,11 +16,11 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    'fc:frame': 'vNext',
-    'fc:frame:image': 'https://wankr-alpha.vercel.app/wankr-logo.jpg',
-    'fc:frame:image:aspect_ratio': '1.91:1',
-    'fc:frame:button:1': 'Open WANKR App',
-    'fc:frame:post_url': 'https://wankr-alpha.vercel.app/farcaster/miniapp',
+    'fc:miniapp': 'v1',
+    'fc:miniapp:image': 'https://wankr-alpha.vercel.app/wankr-logo.jpg',
+    'fc:miniapp:image:aspect_ratio': '1.91:1',
+    'fc:miniapp:button:1': 'Open WANKR App',
+    'fc:miniapp:action': 'https://wankr-alpha.vercel.app/farcaster/miniapp',
   },
 }
 
