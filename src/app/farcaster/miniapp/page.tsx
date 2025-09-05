@@ -912,8 +912,8 @@ function FarcasterMiniAppContent() {
             </div>
           </div>
         </>
-    </div>
-  )
+      </div>
+    )
 }
 
 export default function FarcasterMiniApp() {

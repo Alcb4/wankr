@@ -1,33 +1,44 @@
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: 'WANKR Shame & Verification',
-  description: 'Send shame tokens and verify authenticity on Base blockchain. Track shame history for digital identity verification.',
+  title: "WANKR Mini App - Shame Economy",
+  description: "Send shame tokens and verify authenticity on Base blockchain. Track shame history for digital identity verification.",
   openGraph: {
-    title: 'WANKR Shame & Verification',
-    description: 'Send shame tokens and verify authenticity on Base blockchain. Track shame history for digital identity verification.',
+    title: "WANKR Mini App",
+    description: "Send shame tokens and verify authenticity on Base blockchain",
     images: [
       {
-        url: 'https://wankr-alpha.vercel.app/wankr-logo.jpg',
+        url: 'https://wankr-alpha.vercel.app/wankr-logo.svg',
         width: 1200,
-        height: 630,
-        alt: 'WANKR Shame & Verification',
+        height: 1200,
+        alt: 'WANKR Mini App',
+        type: 'image/svg+xml',
       },
     ],
   },
   other: {
-    'fc:miniapp': 'v1',
-    'fc:miniapp:image': 'https://wankr-alpha.vercel.app/wankr-logo.jpg',
-    'fc:miniapp:image:aspect_ratio': '1.91:1',
-    'fc:miniapp:button:1': 'Open WANKR App',
-    'fc:miniapp:action': 'https://wankr-alpha.vercel.app/farcaster/miniapp',
-  },
-}
+    // Farcaster Mini App meta tag - required for embed validation
+    'fc:miniapp': JSON.stringify({
+      version: "1",
+      imageUrl: "https://wankr-alpha.vercel.app/wankr-logo.svg",
+      button: {
+        title: "Open WANKR",
+        action: {
+          type: "launch_frame",
+          name: "WANKR",
+          url: "https://wankr-alpha.vercel.app/farcaster/miniapp",
+          splashImageUrl: "https://wankr-alpha.vercel.app/wankr-logo.svg",
+          splashBackgroundColor: "#1e1b4b"
+        }
+      }
+    })
+  }
+};
 
 export default function MiniAppLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  return children
+  return children;
 }
