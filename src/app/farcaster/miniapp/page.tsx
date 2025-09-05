@@ -139,10 +139,35 @@ function FarcasterMiniAppContent() {
           let userAddress: string | null = null
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const user = context?.user as any
+          
+          // Try multiple ways to get the user's address
           if (user?.verified_accounts?.[0]?.address) {
             userAddress = user.verified_accounts[0].address
+            console.log('✅ Found address in verified_accounts:', userAddress)
           } else if (user?.custody_address) {
             userAddress = user.custody_address
+            console.log('✅ Found address in custody_address:', userAddress)
+          } else if (user?.primary_address) {
+            userAddress = user.primary_address
+            console.log('✅ Found address in primary_address:', userAddress)
+          } else if (user?.address) {
+            userAddress = user.address
+            console.log('✅ Found address in address field:', userAddress)
+          }
+          
+          // If we still don't have an address, try to get it from the wallet
+          if (!userAddress) {
+            console.log('🔍 No address found in context, trying wallet connection...')
+            try {
+              // Try to get accounts from the connected wallet
+              const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' })
+              if (accounts && accounts.length > 0) {
+                userAddress = accounts[0]
+                console.log('✅ Got address from wallet accounts:', userAddress)
+              }
+            } catch (walletError) {
+              console.log('⚠️ Wallet accounts failed:', walletError)
+            }
           }
           
           if (userAddress) {
@@ -150,16 +175,15 @@ function FarcasterMiniAppContent() {
             setIsConnected(true)
             console.log('✅ Farcaster user authenticated:', userAddress)
           } else {
-            // Use demo address for testing
-            setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
-            setIsConnected(true)
-            console.log('✅ Using demo address for testing')
+            console.log('⚠️ No wallet address found, user needs to connect wallet')
+            setIsConnected(false)
+            // Don't set a demo address - let the user connect their wallet
           }
           
         } catch (authError) {
-          console.log('⚠️ Auth failed, using demo address:', authError)
-          setAddress('0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')
-          setIsConnected(true)
+          console.log('⚠️ Auth failed:', authError)
+          setIsConnected(false)
+          // Don't set a demo address - let the user connect their wallet
         }
 
         // Clear timeout and call ready()
@@ -387,13 +411,35 @@ function FarcasterMiniAppContent() {
             </div>
           )}
 
-          {/* Minimal Connection Indicator - Only show if not connected */}
+          {/* Wallet Connection Status */}
           {!isConnected && (
-            <div className="px-4 py-2 bg-red-500/10 border-b border-red-500/20">
+            <div className="px-4 py-3 bg-yellow-500/10 border-b border-yellow-500/20">
               <div className="max-w-md mx-auto">
-                <div className="flex items-center gap-2 text-red-400 text-sm">
-                  <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse"></div>
-                  <span>Connecting to Farcaster...</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-yellow-600 text-sm">
+                    <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
+                    <span>Wallet not connected</span>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        console.log('🔗 Attempting to connect wallet...')
+                        const accounts = await sdk.wallet.ethProvider.request({ method: 'eth_accounts' })
+                        if (accounts && accounts.length > 0) {
+                          setAddress(accounts[0])
+                          setIsConnected(true)
+                          console.log('✅ Wallet connected:', accounts[0])
+                        } else {
+                          console.log('⚠️ No accounts found')
+                        }
+                      } catch (error) {
+                        console.error('❌ Wallet connection failed:', error)
+                      }
+                    }}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded-lg text-xs font-medium hover:bg-yellow-600 transition-colors"
+                  >
+                    Connect
+                  </button>
                 </div>
               </div>
             </div>
@@ -432,7 +478,15 @@ function FarcasterMiniAppContent() {
               {/* Profile Stats */}
               <div className="bg-gradient-to-br from-card to-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-4 shadow-lg">
                 <h3 className="text-base font-semibold mb-3">Your Profile</h3>
-                {isLoadingProfile || isLoadingRealStats ? (
+                {!isConnected ? (
+                  <div className="p-8 text-center">
+                    <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">🔗</span>
+                    </div>
+                    <p className="text-muted-foreground mb-2">Wallet not connected</p>
+                    <p className="text-xs text-muted-foreground">Connect your wallet to view your profile</p>
+                  </div>
+                ) : isLoadingProfile || isLoadingRealStats ? (
                   <div className="p-8 text-center">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-muted-foreground">Loading profile...</p>
