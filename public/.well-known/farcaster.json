@@ -7,7 +7,7 @@
   "miniapp": {
     "version": "1",
     "name": "WANKR",
-    "iconUrl": "https://wankr-alpha.vercel.app/wankr-logo-splash.png",
+    "iconUrl": "https://wankr-alpha.vercel.app/wankr-logo-512x512.png",
     "homeUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp",
     "splashImageUrl": "https://wankr-alpha.vercel.app/wankr-logo-splash.png",
     "splashBackgroundColor": "#1e1b4b",
@@ -16,7 +16,7 @@
     "screenshotUrls": [
       "https://wankr-alpha.vercel.app/screenshots/miniapp-send.jpg"
     ],
-    "heroImageUrl": "https://wankr-alpha.vercel.app/screenshots/hero_preview.jpg",
+    "heroImageUrl": "https://wankr-alpha.vercel.app/wankr-logo-512x512.png",
     "primaryCategory": "social",
     "tags": [
       "shame",
