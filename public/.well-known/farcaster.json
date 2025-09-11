@@ -7,7 +7,7 @@
   "miniapp": {
     "version": "1",
     "name": "WANKR",
-    "iconUrl": "https://wankr-alpha.vercel.app/wankr-logo-512x512.png",
+    "iconUrl": "https://wankr-alpha.vercel.app/wankr-logo-splash.png",
     "homeUrl": "https://wankr-alpha.vercel.app/farcaster/miniapp",
     "splashImageUrl": "https://wankr-alpha.vercel.app/wankr-logo-splash.png",
     "splashBackgroundColor": "#1e1b4b",
