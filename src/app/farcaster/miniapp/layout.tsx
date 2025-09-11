@@ -20,14 +20,14 @@ export const metadata: Metadata = {
     // Farcaster Mini App meta tag - required for embed validation
     'fc:miniapp': JSON.stringify({
       version: "1",
-      imageUrl: "https://wankr-alpha.vercel.app/wankrHeader3x1jpg.jpg",
+      imageUrl: "https://wankr-alpha.vercel.app/wankr-logo-splash.png",
       button: {
         title: "Open WANKR",
         action: {
           type: "launch_frame",
           name: "WANKR",
           url: "https://wankr-alpha.vercel.app/farcaster/miniapp",
-          splashImageUrl: "https://wankr-alpha.vercel.app/wankrHeader3x1jpg.jpg",
+          splashImageUrl: "https://wankr-alpha.vercel.app/wankr-logo-splash.png",
           splashBackgroundColor: "#1e1b4b"
         }
       }
